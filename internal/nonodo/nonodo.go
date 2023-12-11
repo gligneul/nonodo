@@ -7,11 +7,13 @@ package nonodo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gligneul/nonodo/internal/opts"
+	"github.com/gligneul/nonodo/internal/supervisor"
 )
 
 func Run(ctx context.Context, opts opts.NonodoOpts) {
-	fmt.Println("vim-go")
+	var services []supervisor.Service
+	services = append(services, supervisor.NewSignalListenerService())
+	supervisor.Start(ctx, services)
 }
