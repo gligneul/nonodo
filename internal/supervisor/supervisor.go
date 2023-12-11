@@ -55,7 +55,7 @@ func Start(ctx context.Context, services []Service) {
 
 	// Wait for context to be done
 	if ctx.Err() == nil {
-		log.Print("ready")
+		log.Print("everything is ready")
 	}
 	<-ctx.Done()
 

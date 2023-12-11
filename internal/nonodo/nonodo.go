@@ -7,7 +7,9 @@ package nonodo
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/gligneul/nonodo/internal/model"
 	"github.com/gligneul/nonodo/internal/opts"
 	"github.com/gligneul/nonodo/internal/supervisor"
 )
@@ -20,6 +22,10 @@ func Run(ctx context.Context, opts opts.NonodoOpts) {
 	anvil, cleanup := newAnvil(opts)
 	defer cleanup()
 	services = append(services, anvil)
+
+	model := model.NewNonodoModel()
+	rpcEndpoint := fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort)
+	services = append(services, newInputter(model, rpcEndpoint))
 
 	supervisor.Start(ctx, services)
 }
