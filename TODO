@@ -1,0 +1,9 @@
+TODO
+
+- Add unit tests to model
+- Add rollups API
+- Add inspect API
+- Add graphql API
+- Add integration tests
+- Add binary release
+- Add documentation
