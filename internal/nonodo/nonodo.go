@@ -14,6 +14,12 @@ import (
 
 func Run(ctx context.Context, opts opts.NonodoOpts) {
 	var services []supervisor.Service
+
 	services = append(services, supervisor.NewSignalListenerService())
+
+	anvil, cleanup := newAnvil(opts)
+	defer cleanup()
+	services = append(services, anvil)
+
 	supervisor.Start(ctx, services)
 }

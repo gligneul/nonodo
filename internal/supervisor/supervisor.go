@@ -44,13 +44,19 @@ func Start(ctx context.Context, services []Service) {
 		}()
 		select {
 		case <-service.Ready():
+		case <-time.After(ServiceTimeout):
+			log.Print("service timed out")
+			cancel()
+			break
 		case <-ctx.Done():
 			break
 		}
 	}
 
 	// Wait for context to be done
-	log.Print("ready")
+	if ctx.Err() == nil {
+		log.Print("ready")
+	}
 	<-ctx.Done()
 
 	// Wait for all services
