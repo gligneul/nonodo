@@ -11,23 +11,30 @@ import (
 
 	"github.com/cartesi/rollups-node/pkg/contracts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gligneul/nonodo/internal/model"
 )
 
 // The inputterService reads inputs from anvil and puts them in the model.
 type inputterService struct {
-	ready       chan struct{}
-	model       *model.NonodoModel
-	rpcEndpoint string
+	ready           chan struct{}
+	model           *model.NonodoModel
+	rpcEndpoint     string
+	inputBoxAddress common.Address
 }
 
 // Creates a new inputterService from opts.
-func newInputterService(model *model.NonodoModel, rpcEndpoint string) *inputterService {
+func newInputterService(
+	model *model.NonodoModel,
+	rpcEndpoint string,
+	inputBoxAddress common.Address,
+) *inputterService {
 	return &inputterService{
-		ready:       make(chan struct{}),
-		model:       model,
-		rpcEndpoint: rpcEndpoint,
+		ready:           make(chan struct{}),
+		model:           model,
+		rpcEndpoint:     rpcEndpoint,
+		inputBoxAddress: inputBoxAddress,
 	}
 }
 
@@ -37,7 +44,7 @@ func (i *inputterService) Start(ctx context.Context) error {
 		return err
 	}
 
-	inputBox, err := contracts.NewInputBox(InputBoxAddress, client)
+	inputBox, err := contracts.NewInputBox(i.inputBoxAddress, client)
 	if err != nil {
 		return err
 	}

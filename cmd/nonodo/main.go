@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/gligneul/nonodo/internal/nonodo"
-	"github.com/gligneul/nonodo/internal/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -19,21 +18,23 @@ var cmd = &cobra.Command{
 	Run:   run,
 }
 
-var nonodoOpts = opts.NewNonodoOpts()
+var opts = nonodo.NewNonodoOpts()
 
 func init() {
-	cmd.Flags().IntVar(&nonodoOpts.AnvilBlockTime, "anvil-block-time",
-		nonodoOpts.AnvilBlockTime, "Time in seconds between Anvil blocks")
-	cmd.Flags().IntVar(&nonodoOpts.AnvilPort, "anvil-port", nonodoOpts.AnvilPort,
+	cmd.Flags().IntVar(&opts.AnvilBlockTime, "anvil-block-time", opts.AnvilBlockTime,
+		"Time in seconds between Anvil blocks")
+	cmd.Flags().IntVar(&opts.AnvilPort, "anvil-port", opts.AnvilPort,
 		"HTTP port used by Anvil")
-	cmd.Flags().BoolVar(&nonodoOpts.AnvilVerbose, "anvil-verbose", nonodoOpts.AnvilVerbose,
+	cmd.Flags().BoolVar(&opts.AnvilVerbose, "anvil-verbose", opts.AnvilVerbose,
 		"If true, prints Anvil's output")
-	cmd.Flags().IntVar(&nonodoOpts.HttpPort, "http-port", nonodoOpts.HttpPort,
+	cmd.Flags().IntVar(&opts.HttpPort, "http-port", opts.HttpPort,
 		"HTTP port used by nonodo to serve its APIs")
+	cmd.Flags().BoolVar(&opts.BuiltInDApp, "built-in-dapp", opts.BuiltInDApp,
+		"If true, nonodo starts a built-in echo DApp")
 }
 
 func run(cmd *cobra.Command, args []string) {
-	nonodo.Run(cmd.Context(), nonodoOpts)
+	nonodo.Run(cmd.Context(), opts)
 }
 
 func main() {

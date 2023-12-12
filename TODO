@@ -1,9 +1,9 @@
 TODO
 
-- Move hardcoded addresses to opts
 - Add unit tests to model
 - Add inspect API
 - Add graphql API
 - Add integration tests
 - Add binary release
 - Add documentation
+- Add support to test net

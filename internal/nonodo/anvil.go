@@ -11,7 +11,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/gligneul/nonodo/internal/opts"
 	"github.com/gligneul/nonodo/internal/supervisor"
 )
 
@@ -28,7 +27,7 @@ type anvilService struct {
 	cleanup func()
 }
 
-func newAnvilService(opts opts.NonodoOpts) *anvilService {
+func newAnvilService(opts NonodoOpts) *anvilService {
 	stateFile, cleanup := loadStateFile()
 	args := []string{
 		"--port", fmt.Sprint(opts.AnvilPort),
