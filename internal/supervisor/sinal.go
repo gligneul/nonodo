@@ -28,8 +28,12 @@ func (s *SignalListenerService) Start(ctx context.Context) error {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	s.ready <- struct{}{}
-	sig := <-sigs
-	return fmt.Errorf("received signal: %v", sig)
+	select {
+	case sig := <-sigs:
+		return fmt.Errorf("received signal: %v", sig)
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (s *SignalListenerService) Ready() <-chan struct{} {

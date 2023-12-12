@@ -6,6 +6,7 @@ package supervisor
 
 import (
 	"context"
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -32,13 +33,14 @@ func Start(ctx context.Context, services []Service) {
 
 	// Start services
 	var wg sync.WaitGroup
+Loop:
 	for _, service := range services {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			defer cancel()
 			err := service.Start(ctx)
-			if err != nil {
+			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Print(err)
 			}
 		}()
@@ -47,9 +49,9 @@ func Start(ctx context.Context, services []Service) {
 		case <-time.After(ServiceTimeout):
 			log.Print("service timed out")
 			cancel()
-			break
+			break Loop
 		case <-ctx.Done():
-			break
+			break Loop
 		}
 	}
 

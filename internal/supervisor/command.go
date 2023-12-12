@@ -50,16 +50,7 @@ func (s *CommandService) Start(ctx context.Context) error {
 		return err
 	}
 	go s.pollTcp(ctx)
-	err := cmd.Run()
-	if err != nil {
-		exitCode := cmd.ProcessState.ExitCode()
-		signal := cmd.ProcessState.Sys().(syscall.WaitStatus).Signal()
-		if exitCode != 0 && signal != syscall.SIGTERM {
-			// only return error if the service exits for reason other than shutdown
-			return err
-		}
-	}
-	return nil
+	return cmd.Run()
 }
 
 func (s *CommandService) Ready() <-chan struct{} {
