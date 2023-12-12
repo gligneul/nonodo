@@ -12,6 +12,7 @@ type NonodoOpts struct {
 	AnvilPort      int
 	AnvilBlockTime int
 	AnvilVerbose   bool
+	HttpPort       int
 }
 
 // Create the options struct with default values.
@@ -20,5 +21,6 @@ func NewNonodoOpts() NonodoOpts {
 		AnvilPort:      EthDefaultPort,
 		AnvilBlockTime: 1,
 		AnvilVerbose:   false,
+		HttpPort:       8080,
 	}
 }

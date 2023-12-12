@@ -1,0 +1,6 @@
+package: rollup
+generate:
+  echo-server: true
+  client: true
+  models: true
+output: generated.go

@@ -1,7 +1,8 @@
 TODO
 
+- Move hardcoded addresses to opts
+- Remove cleanup function from anvil (leaky abstraction)
 - Add unit tests to model
-- Add rollups API
 - Add inspect API
 - Add graphql API
 - Add integration tests

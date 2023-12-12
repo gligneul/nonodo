@@ -15,23 +15,23 @@ import (
 	"github.com/gligneul/nonodo/internal/model"
 )
 
-// The inputter reads inputs from anvil and puts them in the model.
-type inputter struct {
+// The inputterService reads inputs from anvil and puts them in the model.
+type inputterService struct {
 	ready       chan struct{}
 	model       *model.NonodoModel
 	rpcEndpoint string
 }
 
-// Creates a new inputter from opts.
-func newInputter(model *model.NonodoModel, rpcEndpoint string) *inputter {
-	return &inputter{
+// Creates a new inputterService from opts.
+func newInputterService(model *model.NonodoModel, rpcEndpoint string) *inputterService {
+	return &inputterService{
 		ready:       make(chan struct{}),
 		model:       model,
 		rpcEndpoint: rpcEndpoint,
 	}
 }
 
-func (i *inputter) Start(ctx context.Context) error {
+func (i *inputterService) Start(ctx context.Context) error {
 	client, err := ethclient.DialContext(ctx, i.rpcEndpoint)
 	if err != nil {
 		return err
@@ -75,6 +75,6 @@ func (i *inputter) Start(ctx context.Context) error {
 	}
 }
 
-func (i *inputter) Ready() <-chan struct{} {
+func (i *inputterService) Ready() <-chan struct{} {
 	return i.ready
 }

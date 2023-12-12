@@ -70,6 +70,7 @@ type AdvanceInput struct {
 type InspectInput struct {
 	Index                int
 	Status               CompletionStatus
+	Payload              []byte
 	ProccessedInputCount int
 	Reports              []Report
 	Exception            []byte
@@ -179,8 +180,9 @@ func (m *NonodoModel) AddInspectInput(payload []byte) int {
 
 	index := len(m.inspects)
 	input := InspectInput{
-		Index:  index,
-		Status: CompletionStatusUnprocessed,
+		Index:   index,
+		Status:  CompletionStatusUnprocessed,
+		Payload: payload,
 	}
 	m.inspects = append(m.inspects, input)
 	log.Printf("nonodo: inspect input added: %+v", input)

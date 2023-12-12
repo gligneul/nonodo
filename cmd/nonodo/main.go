@@ -28,6 +28,8 @@ func init() {
 		"HTTP port used by Anvil")
 	cmd.Flags().BoolVar(&nonodoOpts.AnvilVerbose, "anvil-verbose", nonodoOpts.AnvilVerbose,
 		"If true, prints Anvil's output")
+	cmd.Flags().IntVar(&nonodoOpts.HttpPort, "http-port", nonodoOpts.HttpPort,
+		"HTTP port used by nonodo to serve its APIs")
 }
 
 func run(cmd *cobra.Command, args []string) {

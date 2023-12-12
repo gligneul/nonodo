@@ -44,7 +44,7 @@ func loadStateFile() (string, func()) {
 
 // Start the anvil process in the host machine.
 // Return a close function that should be called when the program finishes.
-func newAnvil(opts opts.NonodoOpts) (supervisor.Service, func()) {
+func newAnvilService(opts opts.NonodoOpts) (supervisor.Service, func()) {
 	stateFile, cleanup := loadStateFile()
 	args := []string{
 		"--port", fmt.Sprint(opts.AnvilPort),
