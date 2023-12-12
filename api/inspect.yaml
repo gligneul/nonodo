@@ -51,6 +51,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /:
     post:
       operationId: inspect_post
       summary: Inspect DApp state via POST
@@ -60,7 +61,11 @@ paths:
         Other than that, it behaves the same way as described in the GET method.
 
       requestBody:
-        content: application/octet-stream
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
 
       responses:
         "200":
