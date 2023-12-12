@@ -15,19 +15,12 @@ import (
 )
 
 func Run(ctx context.Context, opts opts.NonodoOpts) {
-	var services []supervisor.Service
-
-	services = append(services, supervisor.NewSignalListenerService())
-
-	anvil, cleanup := newAnvilService(opts)
-	defer cleanup()
-	services = append(services, anvil)
-
 	model := model.NewNonodoModel()
+	var services []supervisor.Service
+	services = append(services, supervisor.NewSignalListenerService())
+	services = append(services, newAnvilService(opts))
 	rpcEndpoint := fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort)
 	services = append(services, newInputterService(model, rpcEndpoint))
-
 	services = append(services, newEchoService(model, opts.HttpPort))
-
 	supervisor.Start(ctx, services)
 }

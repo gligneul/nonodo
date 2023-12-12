@@ -4,6 +4,7 @@
 package nonodo
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"log"
@@ -19,6 +20,47 @@ import (
 //go:generate go run ./gen-devnet-state
 //go:embed anvil_state.json
 var anvilState []byte
+
+// Start the anvil process in the host machine.
+type anvilService struct {
+	ready   chan struct{}
+	command *supervisor.CommandService
+	cleanup func()
+}
+
+func newAnvilService(opts opts.NonodoOpts) *anvilService {
+	stateFile, cleanup := loadStateFile()
+	args := []string{
+		"--port", fmt.Sprint(opts.AnvilPort),
+		"--block-time", fmt.Sprint(opts.AnvilBlockTime),
+		"--load-state", stateFile,
+	}
+	if !opts.AnvilVerbose {
+		args = append(args, "--silent")
+	}
+	return &anvilService{
+		ready:   make(chan struct{}),
+		command: supervisor.NewCommandService("anvil", args, nil, opts.AnvilPort),
+		cleanup: cleanup,
+	}
+}
+
+func (s *anvilService) Start(ctx context.Context) error {
+	go func() {
+		// cleanup after the internal service is ready
+		defer s.cleanup()
+		select {
+		case <-s.command.Ready():
+			s.ready <- struct{}{}
+		case <-ctx.Done():
+		}
+	}()
+	return s.command.Start(ctx)
+}
+
+func (s *anvilService) Ready() <-chan struct{} {
+	return s.ready
+}
 
 // Create a temporary file with the anvil state.
 // Return a function to delete this file.
@@ -40,20 +82,4 @@ func loadStateFile() (string, func()) {
 		}
 	}
 	return path, cleanup
-}
-
-// Start the anvil process in the host machine.
-// Return a close function that should be called when the program finishes.
-func newAnvilService(opts opts.NonodoOpts) (supervisor.Service, func()) {
-	stateFile, cleanup := loadStateFile()
-	args := []string{
-		"--port", fmt.Sprint(opts.AnvilPort),
-		"--block-time", fmt.Sprint(opts.AnvilBlockTime),
-		"--load-state", stateFile,
-	}
-	if !opts.AnvilVerbose {
-		args = append(args, "--silent")
-	}
-	service := supervisor.NewCommandService("anvil", args, nil, opts.AnvilPort)
-	return service, cleanup
 }
