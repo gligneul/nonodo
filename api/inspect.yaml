@@ -42,7 +42,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InspectResponse"
+                $ref: "#/components/schemas/InspectResult"
 
         default:
           description: Error response.
@@ -73,7 +73,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InspectResponse"
+                $ref: "#/components/schemas/InspectResult"
 
         default:
           description: Error response.
@@ -84,7 +84,7 @@ paths:
 
 components:
   schemas:
-    InspectResponse:
+    InspectResult:
       type: object
       properties:
         status:
@@ -99,6 +99,11 @@ components:
           type: integer
           description: Number of processed inputs since genesis
           example: 0
+      required:
+        - status
+        - exception_payload
+        - reports
+        - processed_input_count
 
     CompletionStatus:
       type: string
@@ -122,12 +127,16 @@ components:
         For instance, '0xdeadbeef' corresponds to a payload with length 4 and bytes 222, 173, 190, 175.
         An empty payload is represented by the string '0x'.
       example: "0xdeadbeef"
+      pattern: "^0x([0-9a-fA-F]{2})*$"
+      format: hex
 
     Report:
       type: object
       properties:
         payload:
           $ref: "#/components/schemas/Payload"
+      required:
+        - payload
 
     Error:
       type: string

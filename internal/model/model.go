@@ -132,7 +132,7 @@ type NonodoModel struct {
 // Create a new model.
 func NewNonodoModel() *NonodoModel {
 	return &NonodoModel{
-		state: modelStateIdle{},
+		state: &modelStateIdle{},
 	}
 }
 
@@ -185,7 +185,7 @@ func (m *NonodoModel) AddInspectInput(payload []byte) int {
 		Payload: payload,
 	}
 	m.inspects = append(m.inspects, input)
-	log.Printf("nonodo: inspect input added: %+v", input)
+	log.Printf("nonodo: added inspect input: index=%v payload=0x%x", input.Index, input.Payload)
 
 	return index
 }
@@ -223,10 +223,10 @@ func (m *NonodoModel) FinishAndGetNext(accepted bool) Input {
 	}
 
 	switch state := m.state.(type) {
-	case modelStateIdle:
+	case *modelStateIdle:
 		// nothing to do
 
-	case modelStateAdvance:
+	case *modelStateAdvance:
 		m.advances[state.inputIndex].Status = status
 		if accepted {
 			m.advances[state.inputIndex].Vouchers = state.vouchers
@@ -235,7 +235,7 @@ func (m *NonodoModel) FinishAndGetNext(accepted bool) Input {
 		m.advances[state.inputIndex].Reports = state.reports
 		log.Printf("nonodo: finished advance input %v", state.inputIndex)
 
-	case modelStateInspect:
+	case *modelStateInspect:
 		m.inspects[state.inputIndex].Status = status
 		m.inspects[state.inputIndex].ProccessedInputCount = m.getProccessedInputCount()
 		m.inspects[state.inputIndex].Reports = state.reports
@@ -251,7 +251,7 @@ func (m *NonodoModel) FinishAndGetNext(accepted bool) Input {
 
 	inspectInput, ok := m.getUnprocessedInspectInput()
 	if ok {
-		m.state = modelStateInspect{
+		m.state = &modelStateInspect{
 			inputIndex: inspectInput.Index,
 		}
 		log.Printf("nonodo: processing inspect input %v", inspectInput.Index)
@@ -260,14 +260,14 @@ func (m *NonodoModel) FinishAndGetNext(accepted bool) Input {
 
 	advanceInput, ok := m.getUnprocessedAdvanceInput()
 	if ok {
-		m.state = modelStateAdvance{
+		m.state = &modelStateAdvance{
 			inputIndex: advanceInput.Index,
 		}
 		log.Printf("nonodo: processing advance input %v", advanceInput.Index)
 		return advanceInput
 	}
 
-	m.state = modelStateIdle{}
+	m.state = &modelStateIdle{}
 	return nil
 }
 
@@ -278,7 +278,7 @@ func (m *NonodoModel) AddVoucher(destination common.Address, payload []byte) (in
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	state, ok := m.state.(modelStateAdvance)
+	state, ok := m.state.(*modelStateAdvance)
 	if !ok {
 		return 0, fmt.Errorf("cannot add voucher in current state")
 	}
@@ -303,7 +303,7 @@ func (m *NonodoModel) AddNotice(payload []byte) (int, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	state, ok := m.state.(modelStateAdvance)
+	state, ok := m.state.(*modelStateAdvance)
 	if !ok {
 		return 0, fmt.Errorf("cannot add notice in current state")
 	}
@@ -329,12 +329,12 @@ func (m *NonodoModel) AddReport(payload []byte) error {
 	var inputIndex int
 	var reports *[]Report
 	switch state := m.state.(type) {
-	case modelStateIdle:
+	case *modelStateIdle:
 		return fmt.Errorf("cannot add report in current state")
-	case modelStateAdvance:
+	case *modelStateAdvance:
 		inputIndex = state.inputIndex
 		reports = &state.reports
-	case modelStateInspect:
+	case *modelStateInspect:
 		inputIndex = state.inputIndex
 		reports = &state.reports
 	default:
@@ -360,15 +360,15 @@ func (m *NonodoModel) RaiseException(payload []byte) error {
 	defer m.mutex.Unlock()
 
 	switch state := m.state.(type) {
-	case modelStateIdle:
+	case *modelStateIdle:
 		return fmt.Errorf("cannot raise exception in current state")
 
-	case modelStateAdvance:
+	case *modelStateAdvance:
 		m.advances[state.inputIndex].Status = CompletionStatusException
 		m.advances[state.inputIndex].Reports = state.reports
 		log.Printf("nonodo: finished advance input %v with exception", state.inputIndex)
 
-	case modelStateInspect:
+	case *modelStateInspect:
 		m.inspects[state.inputIndex].Status = CompletionStatusException
 		m.inspects[state.inputIndex].ProccessedInputCount = m.getProccessedInputCount()
 		m.inspects[state.inputIndex].Reports = state.reports
@@ -379,7 +379,7 @@ func (m *NonodoModel) RaiseException(payload []byte) error {
 	}
 
 	// set state to idle
-	m.state = modelStateIdle{}
+	m.state = &modelStateIdle{}
 	return nil
 }
 

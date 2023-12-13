@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/gligneul/nonodo/internal/inspect"
 	"github.com/gligneul/nonodo/internal/model"
 	"github.com/gligneul/nonodo/internal/rollup"
 	"github.com/labstack/echo/v4"
@@ -37,6 +38,7 @@ func (s *echoService) Start(ctx context.Context) error {
 	e := echo.New()
 	e.Use(middleware.CORS())
 	rollup.Register(e, s.model)
+	inspect.Register(e, s.model)
 
 	// create server
 	addr := fmt.Sprintf("127.0.0.1:%d", s.port)
