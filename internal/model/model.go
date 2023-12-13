@@ -13,132 +13,25 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// -------------------------------------------------------------------------------------------------
-// Rollups types
-// -------------------------------------------------------------------------------------------------
-
-// Rollups voucher type.
-type Voucher struct {
-	Index       int
-	InputIndex  int
-	Destination common.Address
-	Payload     []byte
-}
-
-// Rollups notice type.
-type Notice struct {
-	Index      int
-	InputIndex int
-	Payload    []byte
-}
-
-// Rollups report type.
-type Report struct {
-	Index      int
-	InputIndex int
-	Payload    []byte
-}
-
-// Completion status for inputs.
-type CompletionStatus int
-
-const (
-	CompletionStatusUnprocessed CompletionStatus = iota
-	CompletionStatusAccepted
-	CompletionStatusRejected
-	CompletionStatusException
-)
-
-// Rollups input, which can be advance or inspect.
-type Input interface{}
-
-// Rollups advance input type.
-type AdvanceInput struct {
-	Index       int
-	Status      CompletionStatus
-	MsgSender   common.Address
-	Payload     []byte
-	BlockNumber uint64
-	Timestamp   time.Time
-	Vouchers    []Voucher
-	Notices     []Notice
-	Reports     []Report
-	Exception   []byte
-}
-
-// Rollups inspect input type.
-type InspectInput struct {
-	Index                int
-	Status               CompletionStatus
-	Payload              []byte
-	ProccessedInputCount int
-	Reports              []Report
-	Exception            []byte
-}
-
-// -------------------------------------------------------------------------------------------------
-// Query filters
-// -------------------------------------------------------------------------------------------------
-
-// Filter inputs.
-type InputFilter struct {
-	IndexGreaterThan *int
-	IndexLowerThan   *int
-}
-
-// Filter outputs (vouchers, notices, and reports).
-type OutputFilter struct {
-	InputIndex *int
-}
-
-// -------------------------------------------------------------------------------------------------
-// State
-// -------------------------------------------------------------------------------------------------
-
-// Interface that represents the state of the nonodo model.
-type modelState interface{}
-
-// In the idle state, the model waits for an finish request from the rollups API.
-type modelStateIdle struct {
-	Reports []Report
-}
-
-// In the advance state, the model accumulates the outputs from an advance.
-type modelStateAdvance struct {
-	inputIndex int
-	vouchers   []Voucher
-	notices    []Notice
-	reports    []Report
-}
-
-// In the inspect state, the model accumulates the reports from an inspect.
-type modelStateInspect struct {
-	inputIndex int
-	reports    []Report
-}
-
-// -------------------------------------------------------------------------------------------------
-// NonodoModel
-// -------------------------------------------------------------------------------------------------
-
 // Nonodo model shared among the internal services.
+// The model store inputs as pointers because these pointers are shared with the rollup state.
 type NonodoModel struct {
 	mutex    sync.Mutex
-	advances []AdvanceInput
-	inspects []InspectInput
-	state    modelState
+	advances []*AdvanceInput
+	inspects []*InspectInput
+	state    rollupsState
 }
 
 // Create a new model.
 func NewNonodoModel() *NonodoModel {
 	return &NonodoModel{
-		state: &modelStateIdle{},
+		state: &rollupsStateIdle{},
 	}
 }
 
-// -------------------------------------------------------------------------------------------------
+//
 // Methods for Inputter
-// -------------------------------------------------------------------------------------------------
+//
 
 // Add an advance input to the model.
 func (m *NonodoModel) AddAdvanceInput(
@@ -163,14 +56,14 @@ func (m *NonodoModel) AddAdvanceInput(
 		Timestamp:   timestamp,
 		BlockNumber: blockNumber,
 	}
-	m.advances = append(m.advances, input)
+	m.advances = append(m.advances, &input)
 	log.Printf("nonodo: added advance input: index=%v sender=%v payload=0x%x",
 		input.Index, input.MsgSender, input.Payload)
 }
 
-// -------------------------------------------------------------------------------------------------
+//
 // Methods for Inspector
-// -------------------------------------------------------------------------------------------------
+//
 
 // Add an inspect input to the model.
 // Return the inspect input index that should be used for polling.
@@ -184,7 +77,7 @@ func (m *NonodoModel) AddInspectInput(payload []byte) int {
 		Status:  CompletionStatusUnprocessed,
 		Payload: payload,
 	}
-	m.inspects = append(m.inspects, input)
+	m.inspects = append(m.inspects, &input)
 	log.Printf("nonodo: added inspect input: index=%v payload=0x%x", input.Index, input.Payload)
 
 	return index
@@ -198,12 +91,12 @@ func (m *NonodoModel) GetInspectInput(index int) InspectInput {
 	if index >= len(m.inspects) {
 		panic(fmt.Sprintf("invalid inspect input index: %v", index))
 	}
-	return m.inspects[index]
+	return *m.inspects[index]
 }
 
-// -------------------------------------------------------------------------------------------------
+//
 // Methods for Rollups
-// -------------------------------------------------------------------------------------------------
+//
 
 // Finish the current input and get the next one.
 // If there is no input to be processed return nil.
@@ -211,63 +104,33 @@ func (m *NonodoModel) FinishAndGetNext(accepted bool) Input {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	//
 	// finish current input
-	//
-
 	var status CompletionStatus
 	if accepted {
 		status = CompletionStatusAccepted
 	} else {
 		status = CompletionStatusRejected
 	}
+	m.state.finish(status)
 
-	switch state := m.state.(type) {
-	case *modelStateIdle:
-		// nothing to do
-
-	case *modelStateAdvance:
-		m.advances[state.inputIndex].Status = status
-		if accepted {
-			m.advances[state.inputIndex].Vouchers = state.vouchers
-			m.advances[state.inputIndex].Notices = state.notices
+	// try to get first unprocessed inspect
+	for _, input := range m.inspects {
+		if input.Status == CompletionStatusUnprocessed {
+			m.state = newRollupsStateInspect(input, m.getProccessedInputCount)
+			return *input
 		}
-		m.advances[state.inputIndex].Reports = state.reports
-		log.Printf("nonodo: finished advance input %v", state.inputIndex)
-
-	case *modelStateInspect:
-		m.inspects[state.inputIndex].Status = status
-		m.inspects[state.inputIndex].ProccessedInputCount = m.getProccessedInputCount()
-		m.inspects[state.inputIndex].Reports = state.reports
-		log.Printf("nonodo: finished inspect input %v", state.inputIndex)
-
-	default:
-		panic("invalid state")
 	}
 
-	//
-	// get next input
-	//
-
-	inspectInput, ok := m.getUnprocessedInspectInput()
-	if ok {
-		m.state = &modelStateInspect{
-			inputIndex: inspectInput.Index,
+	// try to get first unprocessed advance
+	for _, input := range m.advances {
+		if input.Status == CompletionStatusUnprocessed {
+			m.state = newRollupsStateAdvance(input)
+			return *input
 		}
-		log.Printf("nonodo: processing inspect input %v", inspectInput.Index)
-		return inspectInput
 	}
 
-	advanceInput, ok := m.getUnprocessedAdvanceInput()
-	if ok {
-		m.state = &modelStateAdvance{
-			inputIndex: advanceInput.Index,
-		}
-		log.Printf("nonodo: processing advance input %v", advanceInput.Index)
-		return advanceInput
-	}
-
-	m.state = &modelStateIdle{}
+	// if no input was found, set state to idle
+	m.state = newRollupsStateIdle()
 	return nil
 }
 
@@ -278,22 +141,7 @@ func (m *NonodoModel) AddVoucher(destination common.Address, payload []byte) (in
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	state, ok := m.state.(*modelStateAdvance)
-	if !ok {
-		return 0, fmt.Errorf("cannot add voucher in current state")
-	}
-
-	index := len(state.vouchers)
-	voucher := Voucher{
-		Index:       index,
-		InputIndex:  state.inputIndex,
-		Destination: destination,
-		Payload:     payload,
-	}
-	state.vouchers = append(state.vouchers, voucher)
-	log.Printf("nonodo: added voucher %v", index)
-
-	return index, nil
+	return m.state.addVoucher(destination, payload)
 }
 
 // Add a notice to the model.
@@ -303,21 +151,7 @@ func (m *NonodoModel) AddNotice(payload []byte) (int, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	state, ok := m.state.(*modelStateAdvance)
-	if !ok {
-		return 0, fmt.Errorf("cannot add notice in current state")
-	}
-
-	index := len(state.notices)
-	notice := Notice{
-		Index:      index,
-		InputIndex: state.inputIndex,
-		Payload:    payload,
-	}
-	state.notices = append(state.notices, notice)
-	log.Printf("nonodo: added notice %v", index)
-
-	return index, nil
+	return m.state.addNotice(payload)
 }
 
 // Add a report to the model.
@@ -326,66 +160,28 @@ func (m *NonodoModel) AddReport(payload []byte) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	var inputIndex int
-	var reports *[]Report
-	switch state := m.state.(type) {
-	case *modelStateIdle:
-		return fmt.Errorf("cannot add report in current state")
-	case *modelStateAdvance:
-		inputIndex = state.inputIndex
-		reports = &state.reports
-	case *modelStateInspect:
-		inputIndex = state.inputIndex
-		reports = &state.reports
-	default:
-		panic("invalid state")
-	}
-
-	index := len(*reports)
-	report := Report{
-		Index:      index,
-		InputIndex: inputIndex,
-		Payload:    payload,
-	}
-	*reports = append(*reports, report)
-	log.Printf("nonodo: added report %v", index)
-
-	return nil
+	return m.state.addReport(payload)
 }
 
 // Finish the current input with an exception.
 // Return an error if the state isn't advance or inspect.
-func (m *NonodoModel) RaiseException(payload []byte) error {
+func (m *NonodoModel) RegisterException(payload []byte) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	switch state := m.state.(type) {
-	case *modelStateIdle:
-		return fmt.Errorf("cannot raise exception in current state")
-
-	case *modelStateAdvance:
-		m.advances[state.inputIndex].Status = CompletionStatusException
-		m.advances[state.inputIndex].Reports = state.reports
-		log.Printf("nonodo: finished advance input %v with exception", state.inputIndex)
-
-	case *modelStateInspect:
-		m.inspects[state.inputIndex].Status = CompletionStatusException
-		m.inspects[state.inputIndex].ProccessedInputCount = m.getProccessedInputCount()
-		m.inspects[state.inputIndex].Reports = state.reports
-		log.Printf("nonodo: finished inspect input %v with exception", state.inputIndex)
-
-	default:
-		panic("invalid state")
+	err := m.state.registerException(payload)
+	if err != nil {
+		return err
 	}
 
 	// set state to idle
-	m.state = &modelStateIdle{}
+	m.state = newRollupsStateIdle()
 	return nil
 }
 
-// -------------------------------------------------------------------------------------------------
+//
 // Methods for Reader
-// -------------------------------------------------------------------------------------------------
+//
 
 // Get the advance input for the given index.
 // Return false if not found.
@@ -397,7 +193,7 @@ func (m *NonodoModel) GetAdvanceInput(index int) (AdvanceInput, bool) {
 		var input AdvanceInput
 		return input, false
 	}
-	return m.advances[index], true
+	return *m.advances[index], true
 }
 
 // Get the voucher for the given index and input index.
@@ -457,7 +253,7 @@ func (m *NonodoModel) GetInputs(filter InputFilter, offset int, limit int) []Adv
 			input.Index >= *filter.IndexLowerThan {
 			continue
 		}
-		inputs = append(inputs, input)
+		inputs = append(inputs, *input)
 	}
 	return paginate(inputs, offset, limit)
 }
@@ -516,9 +312,9 @@ func (m *NonodoModel) GetReports(filter OutputFilter, limit int, offset int) []R
 	return paginate(reports, offset, limit)
 }
 
-// -------------------------------------------------------------------------------------------------
+//
 // Auxiliary Methods
-// -------------------------------------------------------------------------------------------------
+//
 
 func (m *NonodoModel) getProccessedInputCount() int {
 	n := 0
@@ -529,26 +325,6 @@ func (m *NonodoModel) getProccessedInputCount() int {
 		n++
 	}
 	return n
-}
-
-func (m *NonodoModel) getUnprocessedAdvanceInput() (AdvanceInput, bool) {
-	for _, input := range m.advances {
-		if input.Status == CompletionStatusUnprocessed {
-			return input, true
-		}
-	}
-	var input AdvanceInput
-	return input, false
-}
-
-func (m *NonodoModel) getUnprocessedInspectInput() (InspectInput, bool) {
-	for _, input := range m.inspects {
-		if input.Status == CompletionStatusUnprocessed {
-			return input, true
-		}
-	}
-	var input InspectInput
-	return input, false
 }
 
 func paginate[T any](slice []T, offset int, limit int) []T {

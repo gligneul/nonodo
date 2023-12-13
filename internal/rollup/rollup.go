@@ -182,7 +182,7 @@ func (r *rollupAPI) RegisterException(c echo.Context) error {
 	}
 
 	// talk to model
-	err = r.model.RaiseException(payload)
+	err = r.model.RegisterException(payload)
 	if err != nil {
 		return c.String(http.StatusForbidden, err.Error())
 	}
