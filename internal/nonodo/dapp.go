@@ -138,9 +138,7 @@ func handleInspect(
 	log.Printf("dapp: handling inspect with payload %v", inspect.Payload)
 
 	// add report
-	reportReq := rollup.Report{
-		Payload: inspect.Payload,
-	}
+	reportReq := rollup.Report(inspect)
 	reportResp, err := client.AddReport(ctx, reportReq)
 	if err != nil {
 		return fmt.Errorf("dapp: %v", err)

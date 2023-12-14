@@ -35,7 +35,6 @@ func NewNonodoModel() *NonodoModel {
 
 // Add an advance input to the model.
 func (m *NonodoModel) AddAdvanceInput(
-	inputIndex int,
 	sender common.Address,
 	payload []byte,
 	blockNumber uint64,
@@ -44,12 +43,9 @@ func (m *NonodoModel) AddAdvanceInput(
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if inputIndex != len(m.advances) {
-		panic(fmt.Sprintf("invalid input index: %v; want %v", inputIndex, len(m.advances)))
-	}
-
+	index := len(m.advances)
 	input := AdvanceInput{
-		Index:       inputIndex,
+		Index:       index,
 		Status:      CompletionStatusUnprocessed,
 		MsgSender:   sender,
 		Payload:     payload,
@@ -259,7 +255,7 @@ func (m *NonodoModel) GetInputs(filter InputFilter, offset int, limit int) []Adv
 }
 
 // Get the vouchers given the filter and pagination parameters.
-func (m *NonodoModel) GetVouchers(filter OutputFilter, limit int, offset int) []Voucher {
+func (m *NonodoModel) GetVouchers(filter OutputFilter, offset int, limit int) []Voucher {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -277,7 +273,7 @@ func (m *NonodoModel) GetVouchers(filter OutputFilter, limit int, offset int) []
 }
 
 // Get the notices given the filter and pagination parameters.
-func (m *NonodoModel) GetNotices(filter OutputFilter, limit int, offset int) []Notice {
+func (m *NonodoModel) GetNotices(filter OutputFilter, offset int, limit int) []Notice {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -295,7 +291,7 @@ func (m *NonodoModel) GetNotices(filter OutputFilter, limit int, offset int) []N
 }
 
 // Get the reports given the filter and pagination parameters.
-func (m *NonodoModel) GetReports(filter OutputFilter, limit int, offset int) []Report {
+func (m *NonodoModel) GetReports(filter OutputFilter, offset int, limit int) []Report {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 

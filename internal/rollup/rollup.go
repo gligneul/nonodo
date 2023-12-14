@@ -209,13 +209,19 @@ func convertInput(input model.Input) RollupRequest {
 			},
 			Payload: hexutil.Encode(input.Payload),
 		}
-		resp.Data.FromAdvance(advance)
+		err := resp.Data.FromAdvance(advance)
+		if err != nil {
+			panic("failed to convert advance")
+		}
 		resp.RequestType = AdvanceState
 	case model.InspectInput:
 		inspect := Inspect{
 			Payload: hexutil.Encode(input.Payload),
 		}
-		resp.Data.FromInspect(inspect)
+		err := resp.Data.FromInspect(inspect)
+		if err != nil {
+			panic("failed to convert inspect")
+		}
 		resp.RequestType = InspectState
 	default:
 		panic("invalid input from model")

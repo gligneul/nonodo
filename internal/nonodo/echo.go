@@ -56,7 +56,10 @@ func (s *echoService) Start(ctx context.Context) error {
 	// create goroutine to shutdown server
 	go func() {
 		<-ctx.Done()
-		server.Shutdown(ctx)
+		err := server.Shutdown(ctx)
+		if err != nil {
+			log.Printf("error shutting down http server: %v", err)
+		}
 	}()
 
 	// serve

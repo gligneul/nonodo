@@ -73,7 +73,7 @@ type rollupsStateAdvance struct {
 }
 
 func newRollupsStateAdvance(input *AdvanceInput) *rollupsStateAdvance {
-	log.Printf("nonodo: processing inspect input %v", input.Index)
+	log.Printf("nonodo: processing advance input %v", input.Index)
 	return &rollupsStateAdvance{
 		input: input,
 	}
@@ -130,6 +130,7 @@ func (s *rollupsStateAdvance) addReport(payload []byte) error {
 func (s *rollupsStateAdvance) registerException(payload []byte) error {
 	s.input.Status = CompletionStatusException
 	s.input.Reports = s.reports
+	s.input.Exception = payload
 	log.Printf("nonodo: finished advance with exception")
 	return nil
 }
@@ -187,6 +188,7 @@ func (s *rollupsStateInspect) registerException(payload []byte) error {
 	s.input.Status = CompletionStatusException
 	s.input.ProccessedInputCount = s.getProccessedInputCount()
 	s.input.Reports = s.reports
+	s.input.Exception = payload
 	log.Printf("nonodo: finished inspect with exception")
 	return nil
 }

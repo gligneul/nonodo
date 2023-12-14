@@ -72,7 +72,6 @@ func (i *inputterService) Start(ctx context.Context) error {
 				return fmt.Errorf("failed to get tx header: %v", err)
 			}
 			i.model.AddAdvanceInput(
-				int(log.InputIndex.Int64()),
 				log.Sender,
 				log.Input,
 				log.Raw.BlockNumber,
