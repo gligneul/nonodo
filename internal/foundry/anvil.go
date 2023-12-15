@@ -1,11 +1,10 @@
 // Copyright (c) Gabriel de Quadros Ligneul
 // SPDX-License-Identifier: Apache-2.0 (see LICENSE)
 
-package nonodo
+package foundry
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -14,20 +13,17 @@ import (
 	"github.com/gligneul/nonodo/internal/supervisor"
 )
 
-// Generate the devnet state and embed it in the Go binary.
-//
-//go:generate go run ./gen-devnet-state
-//go:embed anvil_state.json
-var anvilState []byte
+// Default port for the Ethereum node.
+const AnvilDefaultPort = 8545
 
 // Start the anvil process in the host machine.
-type anvilService struct {
-	port      int
-	blockTime int
-	verbose   bool
+type AnvilService struct {
+	Port      int
+	BlockTime int
+	Verbose   bool
 }
 
-func (s anvilService) Start(ctx context.Context, ready chan<- struct{}) error {
+func (s AnvilService) Start(ctx context.Context, ready chan<- struct{}) error {
 	// create temp dir
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -43,24 +39,24 @@ func (s anvilService) Start(ctx context.Context, ready chan<- struct{}) error {
 	// create state file in temp dir
 	stateFile := path.Join(tempDir, "anvil_state.json")
 	const permissions = 0644
-	err = os.WriteFile(stateFile, anvilState, permissions)
+	err = os.WriteFile(stateFile, devnetState, permissions)
 	if err != nil {
 		return fmt.Errorf("anvil: failed to write state file: %v", err)
 	}
 
 	// start command
 	args := []string{
-		"--port", fmt.Sprint(s.port),
-		"--block-time", fmt.Sprint(s.blockTime),
+		"--port", fmt.Sprint(s.Port),
+		"--block-time", fmt.Sprint(s.BlockTime),
 		"--load-state", stateFile,
 	}
-	if !s.verbose {
+	if !s.Verbose {
 		args = append(args, "--silent")
 	}
 	command := supervisor.CommandService{
 		Name: "anvil",
 		Args: args,
-		Port: s.port,
+		Port: s.Port,
 	}
 	return command.Start(ctx, ready)
 }

@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gligneul/nonodo/internal/foundry"
 	"github.com/gligneul/nonodo/internal/model"
 	"github.com/gligneul/nonodo/internal/supervisor"
 )
@@ -18,10 +19,10 @@ func Run(ctx context.Context, opts NonodoOpts) {
 	model := model.NewNonodoModel()
 	var services []supervisor.Service
 	services = append(services, supervisor.SignalListenerService{})
-	services = append(services, anvilService{
-		port:      opts.AnvilPort,
-		blockTime: opts.AnvilBlockTime,
-		verbose:   opts.AnvilVerbose,
+	services = append(services, foundry.AnvilService{
+		Port:      opts.AnvilPort,
+		BlockTime: opts.AnvilBlockTime,
+		Verbose:   opts.AnvilVerbose,
 	})
 	services = append(services, inputterService{
 		model:           model,

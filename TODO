@@ -1,14 +1,14 @@
 TODO
 
+- Rename dapp to app/application
 - Detect genesis block automatically
+- Add tests for inputter
 - Add rollup API tests
 - Add inspect API tests
 - Add graphql API
 - Add nonodo (integration) tests
-    - anvil
-    - inputter
-- Add binary release
 - Add support to test net
 - Add -v
 - Review documentation
 - Add changelog
+- Add binary release
