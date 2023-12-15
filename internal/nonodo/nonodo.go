@@ -24,7 +24,9 @@ func Run(ctx context.Context, opts NonodoOpts) {
 
 	rpcEndpoint := fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort)
 	inputBoxAddress := common.HexToAddress(opts.InputBoxAddress)
-	services = append(services, newInputterService(model, rpcEndpoint, inputBoxAddress))
+	dappAddress := common.HexToAddress(opts.DAppAddress)
+	inputter := newInputterService(model, rpcEndpoint, inputBoxAddress, dappAddress)
+	services = append(services, inputter)
 
 	services = append(services, newEchoService(model, opts.HttpPort))
 

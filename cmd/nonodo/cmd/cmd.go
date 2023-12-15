@@ -18,19 +18,29 @@ var Cmd = &cobra.Command{
 
 const long = `
 Nonodo is a development node for Cartesi Rollups. It was designed to work with DApps running in the
-host machine instead of the Cartesi machine. The DApp back-end should call nonodo's Rollup API to
-advance the rollups state and to perform inspect requests.
+host machine instead of the Cartesi machine. The DApp back-end should call the Rollup HTTP API to
+advance the rollups state and to process inspect inputs.
 
 Nonodo uses the Anvil as the underlying Ethereum node. To install Anvil, read the instructions in
 the Foundry book: https://book.getfoundry.sh/getting-started/installation.
 
-To start nonodo with default configuration, run the following command.
+To start nonodo with default configuration, run the command below.
 
 	nonodo
 
-In the default configuration, nonodo starts an Anvil node with the Cartesi Rollups contracts
+With the default configuration, nonodo starts an Anvil node with the Cartesi Rollups contracts
 deployed. This is the same deployment used by sunodo, so the contract addresses are the same.
 Nonodo offer some flags to configure Anvil; these flags start with --anvil-*.
+
+To send an input to the DApp, you may use cast; a command-line tool from the foundry package. For
+instance, the invocation below sends an input with contents 0xdeadbeef to the running DApp.
+
+	INPUT=0xdeadbeef; \
+	INPUT_BOX_ADDRESS=0x59b22D57D4f067708AB0c00552767405926dc768; \
+	DAPP_ADDRESS=0x70ac08179605AF2D9e75782b8DEcDD3c22aA4D0C; \
+	MNEMONIC="test test test test test test test test test test test junk"; \
+	cast send --mnemonic $MNEMONIC --rpc-url "http://localhost:8545" $INPUT_BOX_ADDRESS \
+		"addInput(address,bytes)(bytes32)" $DAPP_ADDRESS $INPUT
 
 Nonodo exposes the Cartesi Rollups GraphQL (/graphql) and Inspect (/inspect) APIs for the DApp
 front-end, and the Rollup (/rollup) API for the DApp back-end. Nonodo uses the HTTP address and port
@@ -41,7 +51,7 @@ testing the DApp front-end without a working back-end.
 
 	nonodo --built-in-dapp
 
-The flag usage is described below.`
+All flag options are described below.`
 
 var opts = nonodo.NewNonodoOpts()
 

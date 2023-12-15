@@ -22,6 +22,7 @@ type inputterService struct {
 	model           *model.NonodoModel
 	rpcEndpoint     string
 	inputBoxAddress common.Address
+	dappAddress     common.Address
 }
 
 // Creates a new inputterService from opts.
@@ -29,12 +30,14 @@ func newInputterService(
 	model *model.NonodoModel,
 	rpcEndpoint string,
 	inputBoxAddress common.Address,
+	dappAddress common.Address,
 ) *inputterService {
 	return &inputterService{
 		ready:           make(chan struct{}),
 		model:           model,
 		rpcEndpoint:     rpcEndpoint,
 		inputBoxAddress: inputBoxAddress,
+		dappAddress:     dappAddress,
 	}
 }
 
@@ -55,7 +58,8 @@ func (i *inputterService) Start(ctx context.Context) error {
 		Start:   &startingBlock,
 		Context: ctx,
 	}
-	sub, err := inputBox.WatchInputAdded(&opts, logs, nil, nil)
+	dappFilter := []common.Address{i.dappAddress}
+	sub, err := inputBox.WatchInputAdded(&opts, logs, dappFilter, nil)
 	if err != nil {
 		return fmt.Errorf("failed to watch inputs: %v", err)
 	}

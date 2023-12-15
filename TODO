@@ -1,11 +1,9 @@
 TODO
 
-- In inputter, listen only to specific dapp inputs
-- Add automatic tests for inputter (make it an separate module)
-- Detect genesis block automatically
 - Make addresses configurable
     - and check them
 - Add http-address option
+- Detect genesis block automatically
 - Refactor ready channel in supervisor
 - Add rollup API tests
 - Add inspect API tests
