@@ -25,7 +25,7 @@ func AddInput(payload []byte) error {
 		"--rpc-url", fmt.Sprintf("http://127.0.0.1:%v", AnvilDefaultPort),
 		InputBoxAddress,                    // TO
 		"addInput(address,bytes)(bytes32)", // SIG
-		DAppAddress, input,                 // ARGS
+		ApplicationAddress, input,          // ARGS
 	)
 	log.Printf(`calling: "%v"`, strings.Join(cmd.Args, `" "`))
 	output, err := cmd.CombinedOutput()

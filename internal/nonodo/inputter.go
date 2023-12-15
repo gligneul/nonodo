@@ -18,10 +18,10 @@ import (
 
 // The inputterService reads inputs from anvil and puts them in the model.
 type inputterService struct {
-	model           *model.NonodoModel
-	rpcEndpoint     string
-	inputBoxAddress common.Address
-	dappAddress     common.Address
+	model              *model.NonodoModel
+	rpcEndpoint        string
+	inputBoxAddress    common.Address
+	applicationAddress common.Address
 }
 
 func (i inputterService) Start(ctx context.Context, ready chan<- struct{}) error {
@@ -36,13 +36,13 @@ func (i inputterService) Start(ctx context.Context, ready chan<- struct{}) error
 	}
 
 	logs := make(chan *contracts.InputBoxInputAdded)
-	startingBlock := uint64(1)
+	startingBlock := findGenesis(i.inputBoxAddress)
 	opts := bind.WatchOpts{
 		Start:   &startingBlock,
 		Context: ctx,
 	}
-	dappFilter := []common.Address{i.dappAddress}
-	sub, err := inputBox.WatchInputAdded(&opts, logs, dappFilter, nil)
+	filter := []common.Address{i.applicationAddress}
+	sub, err := inputBox.WatchInputAdded(&opts, logs, filter, nil)
 	if err != nil {
 		return fmt.Errorf("failed to watch inputs: %v", err)
 	}
@@ -66,4 +66,8 @@ func (i inputterService) Start(ctx context.Context, ready chan<- struct{}) error
 			)
 		}
 	}
+}
+
+func findGenesis(contract common.Address) uint64 {
+	return 1
 }

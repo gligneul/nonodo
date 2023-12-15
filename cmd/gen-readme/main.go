@@ -4,19 +4,27 @@
 package main
 
 import (
+	"bytes"
 	"os"
 
 	"github.com/gligneul/nonodo/cmd/nonodo/cmd"
-	"github.com/spf13/cobra/doc"
 )
 
 func main() {
-	file, err := os.Create("README.md")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	err = doc.GenMarkdown(cmd.Cmd, file)
+	var buf bytes.Buffer
+
+	buf.WriteString("# nonodo\n\n")
+	buf.WriteString(cmd.Cmd.Long)
+	buf.WriteString("\n\n")
+
+	buf.WriteString("## Flags\n\n```\n")
+	flags := cmd.Cmd.NonInheritedFlags()
+	flags.SetOutput(&buf)
+	flags.PrintDefaults()
+	buf.WriteString("```\n")
+
+	const permission = 644
+	err := os.WriteFile("README.md", buf.Bytes(), permission)
 	if err != nil {
 		panic(err)
 	}

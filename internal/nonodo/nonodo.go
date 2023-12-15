@@ -25,17 +25,17 @@ func Run(ctx context.Context, opts NonodoOpts) {
 		Verbose:   opts.AnvilVerbose,
 	})
 	services = append(services, inputterService{
-		model:           model,
-		rpcEndpoint:     fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort),
-		inputBoxAddress: common.HexToAddress(opts.InputBoxAddress),
-		dappAddress:     common.HexToAddress(opts.DAppAddress),
+		model:              model,
+		rpcEndpoint:        fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort),
+		inputBoxAddress:    common.HexToAddress(opts.InputBoxAddress),
+		applicationAddress: common.HexToAddress(opts.ApplicationAddress),
 	})
-	services = append(services, echoService{
+	services = append(services, routerService{
 		model:   model,
 		address: fmt.Sprintf("%v:%v", opts.HttpAddress, opts.HttpPort),
 	})
-	if opts.BuiltInDApp {
-		services = append(services, dappService{
+	if opts.BuiltInEcho {
+		services = append(services, echoService{
 			rollupEndpoint: fmt.Sprintf("http://127.0.0.1:%v/rollup", opts.HttpPort),
 		})
 	}

@@ -1,6 +1,5 @@
 TODO
 
-- Rename dapp to app/application
 - Detect genesis block automatically
 - Add tests for inputter
 - Add rollup API tests

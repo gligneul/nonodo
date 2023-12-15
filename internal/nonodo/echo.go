@@ -1,59 +1,138 @@
-// (c) Cartesi and individual authors (see AUTHORS)
+// Copyright (c) Gabriel de Quadros Ligneul
 // SPDX-License-Identifier: Apache-2.0 (see LICENSE)
 
 package nonodo
 
 import (
 	"context"
+	"fmt"
 	"log"
-	"net"
 	"net/http"
 
-	"github.com/gligneul/nonodo/internal/inspect"
-	"github.com/gligneul/nonodo/internal/model"
 	"github.com/gligneul/nonodo/internal/rollup"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
-// The inputter reads inputs from anvil and puts them in the model.
+// The echoService uses the rollup API to implement an echo application.
+// This services uses the API rather than talking directly to the model so it can be used in
+// integration tests.
 type echoService struct {
-	address string
-	model   *model.NonodoModel
+	rollupEndpoint string
 }
 
 func (s echoService) Start(ctx context.Context, ready chan<- struct{}) error {
-	// setup routes
-	e := echo.New()
-	e.Use(middleware.CORS())
-	rollup.Register(e, s.model)
-	inspect.Register(e, s.model)
-
-	// create server
-	server := http.Server{
-		Addr:    s.address,
-		Handler: e,
-	}
-	ln, err := net.Listen("tcp", s.address)
+	client, err := rollup.NewClientWithResponses(s.rollupEndpoint)
 	if err != nil {
-		return err
+		return fmt.Errorf("echo: %v", err)
 	}
-	log.Printf("listening on %v", ln.Addr())
+
 	ready <- struct{}{}
+	log.Print("starting built-in echo application")
 
-	// create goroutine to shutdown server
-	go func() {
-		<-ctx.Done()
-		err := server.Shutdown(ctx)
-		if err != nil {
-			log.Printf("error shutting down http server: %v", err)
-		}
-	}()
-
-	// serve
-	err = server.Serve(ln)
-	if err != http.ErrServerClosed {
-		return err
+	finishReq := rollup.Finish{
+		Status: rollup.Accept,
 	}
+	for {
+		finishResp, err := client.FinishWithResponse(ctx, finishReq)
+		if err != nil {
+			return fmt.Errorf("echo: %v", err)
+		}
+		if finishResp.StatusCode() == http.StatusAccepted {
+			continue
+		}
+		if finishResp.StatusCode() != http.StatusOK {
+			return fmt.Errorf("echo: invalid finish response: status=%v body=`%v`",
+				finishResp.StatusCode(), string(finishResp.Body))
+		}
+		finishBody := finishResp.JSON200
+		if finishBody == nil {
+			return fmt.Errorf("echo: missing finish response body")
+		}
+		switch finishBody.RequestType {
+		case rollup.AdvanceState:
+			advance, err := finishBody.Data.AsAdvance()
+			if err != nil {
+				return fmt.Errorf("echo: failed to parser advance: %v", err)
+			}
+			if err := handleAdvance(ctx, client, advance); err != nil {
+				return err
+			}
+		case rollup.InspectState:
+			inspect, err := finishBody.Data.AsInspect()
+			if err != nil {
+				return fmt.Errorf("echo: failed to parser inspect: %v", err)
+			}
+			if err := handleInspect(ctx, client, inspect); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("echo: invalid request type: %v", finishBody.RequestType)
+		}
+	}
+}
+
+func handleAdvance(
+	ctx context.Context,
+	client *rollup.ClientWithResponses,
+	advance rollup.Advance,
+) error {
+	log.Printf("echo: handling advance with payload %v", advance.Payload)
+
+	// add voucher
+	voucherReq := rollup.Voucher{
+		Destination: advance.Metadata.MsgSender,
+		Payload:     advance.Payload,
+	}
+	voucherResp, err := client.AddVoucher(ctx, voucherReq)
+	if err != nil {
+		return fmt.Errorf("echo: %v", err)
+	}
+	if voucherResp.StatusCode != http.StatusOK {
+		return fmt.Errorf("echo: failed to add report")
+	}
+
+	// add notice
+	noticeReq := rollup.Notice{
+		Payload: advance.Payload,
+	}
+	noticeResp, err := client.AddNotice(ctx, noticeReq)
+	if err != nil {
+		return fmt.Errorf("echo: %v", err)
+	}
+	if noticeResp.StatusCode != http.StatusOK {
+		return fmt.Errorf("echo: failed to add notice")
+	}
+
+	// add report
+	reportReq := rollup.Report{
+		Payload: advance.Payload,
+	}
+	reportResp, err := client.AddReport(ctx, reportReq)
+	if err != nil {
+		return fmt.Errorf("echo: %v", err)
+	}
+	if reportResp.StatusCode != http.StatusOK {
+		return fmt.Errorf("echo: failed to add report")
+	}
+
+	return nil
+}
+
+func handleInspect(
+	ctx context.Context,
+	client *rollup.ClientWithResponses,
+	inspect rollup.Inspect,
+) error {
+	log.Printf("echo: handling inspect with payload %v", inspect.Payload)
+
+	// add report
+	reportReq := rollup.Report(inspect)
+	reportResp, err := client.AddReport(ctx, reportReq)
+	if err != nil {
+		return fmt.Errorf("echo: %v", err)
+	}
+	if reportResp.StatusCode != http.StatusOK {
+		return fmt.Errorf("echo: failed to add report")
+	}
+
 	return nil
 }

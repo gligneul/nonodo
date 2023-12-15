@@ -14,8 +14,8 @@ var devnetState []byte
 // Input box address in devnet.
 const InputBoxAddress = "0x59b22D57D4f067708AB0c00552767405926dc768"
 
-// DApp address in devnet.
-const DAppAddress = "0x70ac08179605AF2D9e75782b8DEcDD3c22aA4D0C"
+// Application address in devnet.
+const ApplicationAddress = "0x70ac08179605AF2D9e75782b8DEcDD3c22aA4D0C"
 
 // Foundry test mnemonic.
 const TestMnemonic = "test test test test test test test test test test test junk"
