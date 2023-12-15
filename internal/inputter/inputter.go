@@ -1,7 +1,7 @@
 // (c) Cartesi and individual authors (see AUTHORS)
 // SPDX-License-Identifier: Apache-2.0 (see LICENSE)
 
-package nonodo
+package inputter
 
 import (
 	"context"
@@ -13,35 +13,43 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/gligneul/nonodo/internal/model"
 )
 
-// The inputterService reads inputs from anvil and puts them in the model.
-type inputterService struct {
-	model              *model.NonodoModel
-	rpcEndpoint        string
-	inputBoxAddress    common.Address
-	applicationAddress common.Address
+type Model interface {
+	AddAdvanceInput(
+		sender common.Address,
+		payload []byte,
+		blockNumber uint64,
+		timestamp time.Time,
+	)
 }
 
-func (i inputterService) Start(ctx context.Context, ready chan<- struct{}) error {
-	client, err := ethclient.DialContext(ctx, i.rpcEndpoint)
+// The inputterService reads inputs from Ethereum and puts them in the model.
+type InputterService struct {
+	Model              Model
+	Provider           string
+	InputBoxAddress    common.Address
+	ApplicationAddress common.Address
+}
+
+func (s InputterService) Start(ctx context.Context, ready chan<- struct{}) error {
+	client, err := ethclient.DialContext(ctx, s.Provider)
 	if err != nil {
 		return err
 	}
 
-	inputBox, err := contracts.NewInputBox(i.inputBoxAddress, client)
+	inputBox, err := contracts.NewInputBox(s.InputBoxAddress, client)
 	if err != nil {
 		return err
 	}
 
 	logs := make(chan *contracts.InputBoxInputAdded)
-	startingBlock := findGenesis(i.inputBoxAddress)
+	startingBlock := findGenesis(s.InputBoxAddress)
 	opts := bind.WatchOpts{
 		Start:   &startingBlock,
 		Context: ctx,
 	}
-	filter := []common.Address{i.applicationAddress}
+	filter := []common.Address{s.ApplicationAddress}
 	sub, err := inputBox.WatchInputAdded(&opts, logs, filter, nil)
 	if err != nil {
 		return fmt.Errorf("failed to watch inputs: %v", err)
@@ -58,7 +66,7 @@ func (i inputterService) Start(ctx context.Context, ready chan<- struct{}) error
 			if err != nil {
 				return fmt.Errorf("failed to get tx header: %v", err)
 			}
-			i.model.AddAdvanceInput(
+			s.Model.AddAdvanceInput(
 				log.Sender,
 				log.Input,
 				log.Raw.BlockNumber,

@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gligneul/nonodo/internal/foundry"
+	"github.com/gligneul/nonodo/internal/inputter"
 	"github.com/gligneul/nonodo/internal/model"
 	"github.com/gligneul/nonodo/internal/supervisor"
 )
@@ -24,11 +25,11 @@ func Run(ctx context.Context, opts NonodoOpts) {
 		BlockTime: opts.AnvilBlockTime,
 		Verbose:   opts.AnvilVerbose,
 	})
-	services = append(services, inputterService{
-		model:              model,
-		rpcEndpoint:        fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort),
-		inputBoxAddress:    common.HexToAddress(opts.InputBoxAddress),
-		applicationAddress: common.HexToAddress(opts.ApplicationAddress),
+	services = append(services, inputter.InputterService{
+		Model:              model,
+		Provider:           fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort),
+		InputBoxAddress:    common.HexToAddress(opts.InputBoxAddress),
+		ApplicationAddress: common.HexToAddress(opts.ApplicationAddress),
 	})
 	services = append(services, routerService{
 		model:   model,
