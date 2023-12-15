@@ -1,11 +1,12 @@
 TODO
 
 - Detect genesis block automatically
-- Refactor ready channel in supervisor
 - Add rollup API tests
 - Add inspect API tests
 - Add graphql API
 - Add nonodo (integration) tests
+    - anvil
+    - inputter
 - Add binary release
 - Add support to test net
 - Add -v

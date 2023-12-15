@@ -13,29 +13,17 @@ import (
 )
 
 // This service listens signals and exit when it receives them.
-type SignalListenerService struct {
-	ready chan struct{}
-}
+type SignalListenerService struct{}
 
-func NewSignalListenerService() *SignalListenerService {
-	return &SignalListenerService{
-		ready: make(chan struct{}),
-	}
-}
-
-func (s *SignalListenerService) Start(ctx context.Context) error {
+func (s SignalListenerService) Start(ctx context.Context, ready chan<- struct{}) error {
 	log.Print("press Ctrl+C to exit")
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	s.ready <- struct{}{}
+	ready <- struct{}{}
 	select {
 	case sig := <-sigs:
 		return fmt.Errorf("received signal: %v", sig)
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-}
-
-func (s *SignalListenerService) Ready() <-chan struct{} {
-	return s.ready
 }

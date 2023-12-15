@@ -18,21 +18,11 @@ import (
 
 // The inputter reads inputs from anvil and puts them in the model.
 type echoService struct {
-	ready   chan struct{}
 	address string
 	model   *model.NonodoModel
 }
 
-// Creates a new inputter from opts.
-func newEchoService(model *model.NonodoModel, address string) *echoService {
-	return &echoService{
-		ready:   make(chan struct{}),
-		address: address,
-		model:   model,
-	}
-}
-
-func (s *echoService) Start(ctx context.Context) error {
+func (s echoService) Start(ctx context.Context, ready chan<- struct{}) error {
 	// setup routes
 	e := echo.New()
 	e.Use(middleware.CORS())
@@ -49,7 +39,7 @@ func (s *echoService) Start(ctx context.Context) error {
 		return err
 	}
 	log.Printf("listening on %v", ln.Addr())
-	s.ready <- struct{}{}
+	ready <- struct{}{}
 
 	// create goroutine to shutdown server
 	go func() {
@@ -66,8 +56,4 @@ func (s *echoService) Start(ctx context.Context) error {
 		return err
 	}
 	return nil
-}
-
-func (s *echoService) Ready() <-chan struct{} {
-	return s.ready
 }

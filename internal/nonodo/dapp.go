@@ -16,25 +16,16 @@ import (
 // This services uses the API rather than talking directly to the model so it can be used in
 // integration tests.
 type dappService struct {
-	ready          chan struct{}
 	rollupEndpoint string
 }
 
-// Creates a new echo dapp.
-func newDappService(rollupEndpoint string) *dappService {
-	return &dappService{
-		ready:          make(chan struct{}),
-		rollupEndpoint: rollupEndpoint,
-	}
-}
-
-func (s *dappService) Start(ctx context.Context) error {
+func (s dappService) Start(ctx context.Context, ready chan<- struct{}) error {
 	client, err := rollup.NewClientWithResponses(s.rollupEndpoint)
 	if err != nil {
 		return fmt.Errorf("dapp: %v", err)
 	}
 
-	s.ready <- struct{}{}
+	ready <- struct{}{}
 	log.Print("starting built-in echo dapp")
 
 	finishReq := rollup.Finish{
@@ -77,10 +68,6 @@ func (s *dappService) Start(ctx context.Context) error {
 			return fmt.Errorf("dapp: invalid request type: %v", finishBody.RequestType)
 		}
 	}
-}
-
-func (s *dappService) Ready() <-chan struct{} {
-	return s.ready
 }
 
 func handleAdvance(

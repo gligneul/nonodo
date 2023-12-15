@@ -20,60 +20,45 @@ const CommandPollInterval = 100 * time.Millisecond
 // This service is responsible for a shell command that runs endlessly.
 // The service polls the given port to know when it is ready.
 type CommandService struct {
-	ready chan struct{}
-	name  string
-	args  []string
-	env   []string
-	port  int
+	Name string
+	Args []string
+	Env  []string
+	Port int
 }
 
-func NewCommandService(name string, args []string, env []string, port int) *CommandService {
-	return &CommandService{
-		ready: make(chan struct{}),
-		name:  name,
-		args:  args,
-		env:   env,
-		port:  port,
-	}
-}
-
-func (s *CommandService) Start(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, s.name, s.args...)
-	cmd.Env = s.env
+func (s CommandService) Start(ctx context.Context, ready chan<- struct{}) error {
+	cmd := exec.CommandContext(ctx, s.Name, s.Args...)
+	cmd.Env = s.Env
 	cmd.Stderr = s
 	cmd.Stdout = s
 	cmd.Cancel = func() error {
 		err := cmd.Process.Signal(syscall.SIGTERM)
 		if err != nil {
-			log.Printf("failed to send SIGTERM to %v: %v\n", s.name, err)
+			log.Printf("failed to send SIGTERM to %v: %v\n", s.Name, err)
 		}
 		return err
 	}
-	go s.pollTcp(ctx)
+	go s.pollTcp(ctx, ready)
 	return cmd.Run()
 }
 
-func (s *CommandService) Ready() <-chan struct{} {
-	return s.ready
-}
-
 // Log the command output.
-func (s *CommandService) Write(data []byte) (int, error) {
+func (s CommandService) Write(data []byte) (int, error) {
 	lines := strings.Split(string(data), "\n")
 	for _, line := range lines {
-		log.Printf("%v: %v", s.name, line)
+		log.Printf("%v: %v", s.Name, line)
 	}
 	return len(data), nil
 }
 
 // Polls the command tcp port until it is ready.
-func (s *CommandService) pollTcp(ctx context.Context) {
+func (s CommandService) pollTcp(ctx context.Context, ready chan<- struct{}) {
 	for {
-		conn, err := net.Dial("tcp", fmt.Sprintf("0.0.0.0:%v", s.port))
+		conn, err := net.Dial("tcp", fmt.Sprintf("0.0.0.0:%v", s.Port))
 		if err == nil {
 			conn.Close()
-			log.Printf("%v is ready", s.name)
-			s.ready <- struct{}{}
+			log.Printf("%v is ready", s.Name)
+			ready <- struct{}{}
 			return
 		}
 		select {

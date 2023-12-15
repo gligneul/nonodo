@@ -17,24 +17,26 @@ import (
 func Run(ctx context.Context, opts NonodoOpts) {
 	model := model.NewNonodoModel()
 	var services []supervisor.Service
-
-	services = append(services, supervisor.NewSignalListenerService())
-
-	services = append(services, newAnvilService(opts))
-
-	rpcEndpoint := fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort)
-	inputBoxAddress := common.HexToAddress(opts.InputBoxAddress)
-	dappAddress := common.HexToAddress(opts.DAppAddress)
-	inputter := newInputterService(model, rpcEndpoint, inputBoxAddress, dappAddress)
-	services = append(services, inputter)
-
-	httpAddress := fmt.Sprintf("%v:%v", opts.HttpAddress, opts.HttpPort)
-	services = append(services, newEchoService(model, httpAddress))
-
+	services = append(services, supervisor.SignalListenerService{})
+	services = append(services, anvilService{
+		port:      opts.AnvilPort,
+		blockTime: opts.AnvilBlockTime,
+		verbose:   opts.AnvilVerbose,
+	})
+	services = append(services, inputterService{
+		model:           model,
+		rpcEndpoint:     fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort),
+		inputBoxAddress: common.HexToAddress(opts.InputBoxAddress),
+		dappAddress:     common.HexToAddress(opts.DAppAddress),
+	})
+	services = append(services, echoService{
+		model:   model,
+		address: fmt.Sprintf("%v:%v", opts.HttpAddress, opts.HttpPort),
+	})
 	if opts.BuiltInDApp {
-		rollupsEndpoint := fmt.Sprintf("http://127.0.0.1:%v/rollup", opts.HttpPort)
-		services = append(services, newDappService(rollupsEndpoint))
+		services = append(services, dappService{
+			rollupEndpoint: fmt.Sprintf("http://127.0.0.1:%v/rollup", opts.HttpPort),
+		})
 	}
-
 	supervisor.Start(ctx, services)
 }

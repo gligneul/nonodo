@@ -19,10 +19,7 @@ const ServiceTimeout = time.Second * 5
 type Service interface {
 
 	// Start the service.
-	Start(ctx context.Context) error
-
-	// The service should send a message when it is ready.
-	Ready() <-chan struct{}
+	Start(ctx context.Context, ready chan<- struct{}) error
 }
 
 // Start the services in order, waiting for each one to be ready before starting the next one.
@@ -36,16 +33,17 @@ func Start(ctx context.Context, services []Service) {
 Loop:
 	for _, service := range services {
 		wg.Add(1)
+		ready := make(chan struct{})
 		go func() {
 			defer wg.Done()
 			defer cancel()
-			err := service.Start(ctx)
+			err := service.Start(ctx, ready)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Print(err)
 			}
 		}()
 		select {
-		case <-service.Ready():
+		case <-ready:
 		case <-time.After(ServiceTimeout):
 			log.Print("service timed out")
 			cancel()

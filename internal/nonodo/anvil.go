@@ -22,63 +22,45 @@ var anvilState []byte
 
 // Start the anvil process in the host machine.
 type anvilService struct {
-	ready   chan struct{}
-	command *supervisor.CommandService
-	cleanup func()
+	port      int
+	blockTime int
+	verbose   bool
 }
 
-func newAnvilService(opts NonodoOpts) *anvilService {
-	stateFile, cleanup := loadStateFile()
-	args := []string{
-		"--port", fmt.Sprint(opts.AnvilPort),
-		"--block-time", fmt.Sprint(opts.AnvilBlockTime),
-		"--load-state", stateFile,
-	}
-	if !opts.AnvilVerbose {
-		args = append(args, "--silent")
-	}
-	return &anvilService{
-		ready:   make(chan struct{}),
-		command: supervisor.NewCommandService("anvil", args, nil, opts.AnvilPort),
-		cleanup: cleanup,
-	}
-}
-
-func (s *anvilService) Start(ctx context.Context) error {
-	go func() {
-		// cleanup after the internal service is ready
-		defer s.cleanup()
-		select {
-		case <-s.command.Ready():
-			s.ready <- struct{}{}
-		case <-ctx.Done():
-		}
-	}()
-	return s.command.Start(ctx)
-}
-
-func (s *anvilService) Ready() <-chan struct{} {
-	return s.ready
-}
-
-// Create a temporary file with the anvil state.
-// Return a function to delete this file.
-func loadStateFile() (string, func()) {
+func (s anvilService) Start(ctx context.Context, ready chan<- struct{}) error {
+	// create temp dir
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("anvil: failed to create temp dir: %v", err)
 	}
-	path := path.Join(tempDir, "anvil_state.json")
-	const permissions = 0644
-	err = os.WriteFile(path, anvilState, permissions)
-	if err != nil {
-		panic(err)
-	}
-	cleanup := func() {
+	defer func() {
 		err := os.RemoveAll(tempDir)
 		if err != nil {
-			log.Printf("failed to remove temp file: %v", err)
+			log.Printf("anvil: failed to remove temp file: %v", err)
 		}
+	}()
+
+	// create state file in temp dir
+	stateFile := path.Join(tempDir, "anvil_state.json")
+	const permissions = 0644
+	err = os.WriteFile(stateFile, anvilState, permissions)
+	if err != nil {
+		return fmt.Errorf("anvil: failed to write state file: %v", err)
 	}
-	return path, cleanup
+
+	// start command
+	args := []string{
+		"--port", fmt.Sprint(s.port),
+		"--block-time", fmt.Sprint(s.blockTime),
+		"--load-state", stateFile,
+	}
+	if !s.verbose {
+		args = append(args, "--silent")
+	}
+	command := supervisor.CommandService{
+		Name: "anvil",
+		Args: args,
+		Port: s.port,
+	}
+	return command.Start(ctx, ready)
 }

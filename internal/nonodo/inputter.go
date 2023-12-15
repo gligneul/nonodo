@@ -18,30 +18,13 @@ import (
 
 // The inputterService reads inputs from anvil and puts them in the model.
 type inputterService struct {
-	ready           chan struct{}
 	model           *model.NonodoModel
 	rpcEndpoint     string
 	inputBoxAddress common.Address
 	dappAddress     common.Address
 }
 
-// Creates a new inputterService from opts.
-func newInputterService(
-	model *model.NonodoModel,
-	rpcEndpoint string,
-	inputBoxAddress common.Address,
-	dappAddress common.Address,
-) *inputterService {
-	return &inputterService{
-		ready:           make(chan struct{}),
-		model:           model,
-		rpcEndpoint:     rpcEndpoint,
-		inputBoxAddress: inputBoxAddress,
-		dappAddress:     dappAddress,
-	}
-}
-
-func (i *inputterService) Start(ctx context.Context) error {
+func (i inputterService) Start(ctx context.Context, ready chan<- struct{}) error {
 	client, err := ethclient.DialContext(ctx, i.rpcEndpoint)
 	if err != nil {
 		return err
@@ -65,7 +48,7 @@ func (i *inputterService) Start(ctx context.Context) error {
 	}
 
 	log.Print("watching inputs")
-	i.ready <- struct{}{}
+	ready <- struct{}{}
 	for {
 		select {
 		case err := <-sub.Err():
@@ -83,8 +66,4 @@ func (i *inputterService) Start(ctx context.Context) error {
 			)
 		}
 	}
-}
-
-func (i *inputterService) Ready() <-chan struct{} {
-	return i.ready
 }
