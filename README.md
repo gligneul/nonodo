@@ -52,6 +52,7 @@ nonodo [flags]
       --anvil-verbose          If true, prints Anvil's output
       --built-in-dapp          If true, nonodo starts a built-in echo DApp
   -h, --help                   help for nonodo
+      --http-address string    HTTP address used by nonodo to serve its APIs (default "127.0.0.1")
       --http-port int          HTTP port used by nonodo to serve its APIs (default 8080)
 ```
 

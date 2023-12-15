@@ -62,10 +62,12 @@ func init() {
 		"HTTP port used by Anvil")
 	Cmd.Flags().BoolVar(&opts.AnvilVerbose, "anvil-verbose", opts.AnvilVerbose,
 		"If true, prints Anvil's output")
-	Cmd.Flags().IntVar(&opts.HttpPort, "http-port", opts.HttpPort,
-		"HTTP port used by nonodo to serve its APIs")
 	Cmd.Flags().BoolVar(&opts.BuiltInDApp, "built-in-dapp", opts.BuiltInDApp,
 		"If true, nonodo starts a built-in echo DApp")
+	Cmd.Flags().StringVar(&opts.HttpAddress, "http-address", opts.HttpAddress,
+		"HTTP address used by nonodo to serve its APIs")
+	Cmd.Flags().IntVar(&opts.HttpPort, "http-port", opts.HttpPort,
+		"HTTP port used by nonodo to serve its APIs")
 }
 
 func run(Cmd *cobra.Command, args []string) {

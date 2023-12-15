@@ -5,7 +5,6 @@ package nonodo
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -19,17 +18,17 @@ import (
 
 // The inputter reads inputs from anvil and puts them in the model.
 type echoService struct {
-	ready chan struct{}
-	port  int
-	model *model.NonodoModel
+	ready   chan struct{}
+	address string
+	model   *model.NonodoModel
 }
 
 // Creates a new inputter from opts.
-func newEchoService(model *model.NonodoModel, port int) *echoService {
+func newEchoService(model *model.NonodoModel, address string) *echoService {
 	return &echoService{
-		ready: make(chan struct{}),
-		port:  port,
-		model: model,
+		ready:   make(chan struct{}),
+		address: address,
+		model:   model,
 	}
 }
 
@@ -41,16 +40,15 @@ func (s *echoService) Start(ctx context.Context) error {
 	inspect.Register(e, s.model)
 
 	// create server
-	addr := fmt.Sprintf("127.0.0.1:%d", s.port)
 	server := http.Server{
-		Addr:    addr,
+		Addr:    s.address,
 		Handler: e,
 	}
-	ln, err := net.Listen("tcp", addr)
+	ln, err := net.Listen("tcp", s.address)
 	if err != nil {
 		return err
 	}
-	log.Printf("listening on %v", addr)
+	log.Printf("listening on %v", ln.Addr())
 	s.ready <- struct{}{}
 
 	// create goroutine to shutdown server

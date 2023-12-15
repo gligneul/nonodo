@@ -28,7 +28,8 @@ func Run(ctx context.Context, opts NonodoOpts) {
 	inputter := newInputterService(model, rpcEndpoint, inputBoxAddress, dappAddress)
 	services = append(services, inputter)
 
-	services = append(services, newEchoService(model, opts.HttpPort))
+	httpAddress := fmt.Sprintf("%v:%v", opts.HttpAddress, opts.HttpPort)
+	services = append(services, newEchoService(model, httpAddress))
 
 	if opts.BuiltInDApp {
 		rollupsEndpoint := fmt.Sprintf("http://127.0.0.1:%v/rollup", opts.HttpPort)

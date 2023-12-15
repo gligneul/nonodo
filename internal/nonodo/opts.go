@@ -11,8 +11,9 @@ type NonodoOpts struct {
 	AnvilPort       int
 	AnvilBlockTime  int
 	AnvilVerbose    bool
-	HttpPort        int
 	BuiltInDApp     bool
+	HttpAddress     string
+	HttpPort        int
 	InputBoxAddress string
 	DAppAddress     string
 }
@@ -23,8 +24,9 @@ func NewNonodoOpts() NonodoOpts {
 		AnvilPort:       EthDefaultPort,
 		AnvilBlockTime:  1,
 		AnvilVerbose:    false,
-		HttpPort:        8080,
 		BuiltInDApp:     false,
+		HttpAddress:     "127.0.0.1",
+		HttpPort:        8080,
 		InputBoxAddress: "0x59b22D57D4f067708AB0c00552767405926dc768",
 		DAppAddress:     "0x70ac08179605AF2D9e75782b8DEcDD3c22aA4D0C",
 	}
