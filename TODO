@@ -1,8 +1,5 @@
 TODO
 
-- Make addresses configurable
-    - and check them
-- Add http-address option
 - Detect genesis block automatically
 - Refactor ready channel in supervisor
 - Add rollup API tests

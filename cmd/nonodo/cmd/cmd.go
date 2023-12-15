@@ -5,6 +5,11 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gligneul/nonodo/internal/nonodo"
 	"github.com/spf13/cobra"
 )
@@ -68,10 +73,35 @@ func init() {
 		"HTTP address used by nonodo to serve its APIs")
 	Cmd.Flags().IntVar(&opts.HttpPort, "http-port", opts.HttpPort,
 		"HTTP port used by nonodo to serve its APIs")
+	Cmd.Flags().StringVar(&opts.InputBoxAddress, "address-input-box", opts.InputBoxAddress,
+		"InputBox contract address")
+	Cmd.Flags().StringVar(&opts.DAppAddress, "address-dapp", opts.DAppAddress,
+		"DApp contract address")
 }
 
-func run(Cmd *cobra.Command, args []string) {
-	nonodo.Run(Cmd.Context(), opts)
+func run(cmd *cobra.Command, args []string) {
+	checkEthAddress(cmd, "address-input-box")
+	checkEthAddress(cmd, "address-dapp")
+	nonodo.Run(cmd.Context(), opts)
+}
+
+func exitf(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format, args...)
+	os.Exit(1)
+}
+
+func checkEthAddress(cmd *cobra.Command, varName string) {
+	if cmd.Flags().Changed(varName) {
+		value, err := cmd.Flags().GetString(varName)
+		cobra.CheckErr(err)
+		bytes, err := hexutil.Decode(value)
+		if err != nil {
+			exitf("invalid address for --%v: %v\n", varName, err)
+		}
+		if len(bytes) != common.AddressLength {
+			exitf("invalid address for --%v: wrong length\n", varName)
+		}
+	}
 }
 
 func removeFirst(s string) string {
