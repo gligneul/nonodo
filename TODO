@@ -1,10 +1,12 @@
 TODO
 
-- Detect genesis block automatically
 - Add tests for inputter
+- Move HTTP service to supervisor pkg
+- Detect genesis block automatically
 - Add rollup API tests
 - Add inspect API tests
 - Add graphql API
+- Add graphql API tests
 - Add nonodo (integration) tests
 - Add support to test net
 - Add -v

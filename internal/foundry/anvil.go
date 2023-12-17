@@ -23,6 +23,10 @@ type AnvilService struct {
 	Verbose   bool
 }
 
+func (s AnvilService) String() string {
+	return "anvil"
+}
+
 func (s AnvilService) Start(ctx context.Context, ready chan<- struct{}) error {
 	// create temp dir
 	tempDir, err := os.MkdirTemp("", "")

@@ -7,7 +7,6 @@ package rollup
 //go:generate oapi-codegen -config=oapi.yaml ../../api/rollup.yaml
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -24,7 +23,6 @@ const FinishPollInterval = time.Millisecond * 100
 func Register(e *echo.Echo, model *model.NonodoModel) {
 	rollupAPI := &rollupAPI{model}
 	RegisterHandlersWithBaseURL(e, rollupAPI, "rollup")
-	log.Print("added /rollup to HTTP server")
 }
 
 // Shared struct for request handlers.

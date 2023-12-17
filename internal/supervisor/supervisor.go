@@ -7,31 +7,41 @@ package supervisor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"sync"
 	"time"
 )
 
 // Timeout when waiting for services to finish.
-const ServiceTimeout = time.Second * 5
+const DefaultSupervisorTimeout = time.Second * 5
 
-// Service managed by the supervisor function.
-type Service interface {
-
-	// Start the service.
-	Start(ctx context.Context, ready chan<- struct{}) error
+// Start the sub-services in order, waiting for each one to be ready before starting the next one.
+// When a service exits, send a cancel signal to all of them and wait for them to finish.
+type SupervisorService struct {
+	Name     string
+	Services []Service
+	Timeout  time.Duration
 }
 
-// Start the services in order, waiting for each one to be ready before starting the next one.
-// When a service exits, send a cancel signal to all of them and wait for them to finish.
-func Start(ctx context.Context, services []Service) {
+func (s SupervisorService) String() string {
+	return s.Name
+}
+
+func (s SupervisorService) Start(ctx context.Context, ready chan<- struct{}) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	timeout := s.Timeout
+	if timeout == 0 {
+		timeout = DefaultSupervisorTimeout
+	}
 
 	// Start services
 	var wg sync.WaitGroup
 Loop:
-	for _, service := range services {
+	for _, service := range s.Services {
+		service := service
 		wg.Add(1)
 		ready := make(chan struct{})
 		go func() {
@@ -39,13 +49,16 @@ Loop:
 			defer cancel()
 			err := service.Start(ctx, ready)
 			if err != nil && !errors.Is(err, context.Canceled) {
-				log.Print(err)
+				log.Printf("%v: %v exitted with error: %v", s, service, err)
+			} else {
+				log.Printf("%v: %v exitted with success", s, service)
 			}
 		}()
 		select {
 		case <-ready:
-		case <-time.After(ServiceTimeout):
-			log.Print("service timed out")
+			log.Printf("%v: %v is ready", s, service)
+		case <-time.After(timeout):
+			log.Printf("%v: %v timed out", s, service)
 			cancel()
 			break Loop
 		case <-ctx.Done():
@@ -54,8 +67,9 @@ Loop:
 	}
 
 	// Wait for context to be done
+	ready <- struct{}{}
 	if ctx.Err() == nil {
-		log.Print("everything is ready")
+		log.Printf("%v: all services are ready", s)
 	}
 	<-ctx.Done()
 
@@ -67,8 +81,9 @@ Loop:
 	}()
 	select {
 	case <-wait:
-		log.Print("all services were shutdown")
-	case <-time.After(ServiceTimeout):
-		log.Print("exited after a timeout")
+		log.Printf("%v: all services exitted", s)
+		return nil
+	case <-time.After(timeout):
+		return fmt.Errorf("%v: timed out", s)
 	}
 }

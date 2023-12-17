@@ -5,7 +5,6 @@
 package inspect
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -23,7 +22,6 @@ const InspectPollInterval = time.Millisecond * 100
 func Register(e *echo.Echo, model *model.NonodoModel) {
 	inspectAPI := &inspectAPI{model}
 	RegisterHandlersWithBaseURL(e, inspectAPI, "inspect")
-	log.Print("added /inspect to HTTP server")
 }
 
 // Shared struct for request handlers.

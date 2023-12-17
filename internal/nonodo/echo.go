@@ -19,6 +19,10 @@ type echoService struct {
 	rollupEndpoint string
 }
 
+func (s echoService) String() string {
+	return "echo"
+}
+
 func (s echoService) Start(ctx context.Context, ready chan<- struct{}) error {
 	client, err := rollup.NewClientWithResponses(s.rollupEndpoint)
 	if err != nil {
@@ -26,7 +30,6 @@ func (s echoService) Start(ctx context.Context, ready chan<- struct{}) error {
 	}
 
 	ready <- struct{}{}
-	log.Print("starting built-in echo application")
 
 	finishReq := rollup.Finish{
 		Status: rollup.Accept,
@@ -75,7 +78,7 @@ func handleAdvance(
 	client *rollup.ClientWithResponses,
 	advance rollup.Advance,
 ) error {
-	log.Printf("echo: handling advance with payload %v", advance.Payload)
+	log.Printf("echo: handling advance input")
 
 	// add voucher
 	voucherReq := rollup.Voucher{
@@ -122,7 +125,7 @@ func handleInspect(
 	client *rollup.ClientWithResponses,
 	inspect rollup.Inspect,
 ) error {
-	log.Printf("echo: handling inspect with payload %v", inspect.Payload)
+	log.Printf("echo: handling inspect input")
 
 	// add report
 	reportReq := rollup.Report(inspect)

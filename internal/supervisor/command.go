@@ -26,6 +26,10 @@ type CommandService struct {
 	Port int
 }
 
+func (s CommandService) String() string {
+	return s.Name
+}
+
 func (s CommandService) Start(ctx context.Context, ready chan<- struct{}) error {
 	cmd := exec.CommandContext(ctx, s.Name, s.Args...)
 	cmd.Env = s.Env
@@ -34,7 +38,7 @@ func (s CommandService) Start(ctx context.Context, ready chan<- struct{}) error 
 	cmd.Cancel = func() error {
 		err := cmd.Process.Signal(syscall.SIGTERM)
 		if err != nil {
-			log.Printf("failed to send SIGTERM to %v: %v\n", s.Name, err)
+			log.Printf("failed to send SIGTERM to %v: %v", s.Name, err)
 		}
 		return err
 	}
@@ -57,7 +61,6 @@ func (s CommandService) pollTcp(ctx context.Context, ready chan<- struct{}) {
 		conn, err := net.Dial("tcp", fmt.Sprintf("0.0.0.0:%v", s.Port))
 		if err == nil {
 			conn.Close()
-			log.Printf("%v is ready", s.Name)
 			ready <- struct{}{}
 			return
 		}

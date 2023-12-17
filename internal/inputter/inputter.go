@@ -6,7 +6,6 @@ package inputter
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/cartesi/rollups-node/pkg/contracts"
@@ -32,6 +31,10 @@ type InputterService struct {
 	ApplicationAddress common.Address
 }
 
+func (s InputterService) String() string {
+	return "inputter"
+}
+
 func (s InputterService) Start(ctx context.Context, ready chan<- struct{}) error {
 	client, err := ethclient.DialContext(ctx, s.Provider)
 	if err != nil {
@@ -55,10 +58,11 @@ func (s InputterService) Start(ctx context.Context, ready chan<- struct{}) error
 		return fmt.Errorf("failed to watch inputs: %v", err)
 	}
 
-	log.Print("watching inputs")
 	ready <- struct{}{}
 	for {
 		select {
+		case <-ctx.Done():
+			return ctx.Err()
 		case err := <-sub.Err():
 			return err
 		case log := <-logs:
