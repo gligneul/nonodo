@@ -5,6 +5,7 @@ package supervisor
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -44,8 +45,8 @@ func (s HttpService) Start(ctx context.Context, ready chan<- struct{}) error {
 
 	// serve
 	err = server.Serve(ln)
-	if err != http.ErrServerClosed {
-		return err
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
 	}
-	return nil
+	return err
 }

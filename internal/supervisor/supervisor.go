@@ -43,11 +43,11 @@ Loop:
 	for _, service := range s.Services {
 		service := service
 		wg.Add(1)
-		ready := make(chan struct{})
+		innerReady := make(chan struct{})
 		go func() {
 			defer wg.Done()
 			defer cancel()
-			err := service.Start(ctx, ready)
+			err := service.Start(ctx, innerReady)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Printf("%v: %v exitted with error: %v", s, service, err)
 			} else {
@@ -55,7 +55,7 @@ Loop:
 			}
 		}()
 		select {
-		case <-ready:
+		case <-innerReady:
 			log.Printf("%v: %v is ready", s, service)
 		case <-time.After(timeout):
 			log.Printf("%v: %v timed out", s, service)
@@ -84,6 +84,6 @@ Loop:
 		log.Printf("%v: all services exitted", s)
 		return nil
 	case <-time.After(timeout):
-		return fmt.Errorf("%v: timed out", s)
+		return fmt.Errorf("%v: timed out waiting for services", s)
 	}
 }

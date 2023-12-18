@@ -33,8 +33,8 @@ func (s CommandService) String() string {
 func (s CommandService) Start(ctx context.Context, ready chan<- struct{}) error {
 	cmd := exec.CommandContext(ctx, s.Name, s.Args...)
 	cmd.Env = s.Env
-	cmd.Stderr = s
-	cmd.Stdout = s
+	cmd.Stderr = commandLogger{s.Name}
+	cmd.Stdout = commandLogger{s.Name}
 	cmd.Cancel = func() error {
 		err := cmd.Process.Signal(syscall.SIGTERM)
 		if err != nil {
@@ -44,15 +44,6 @@ func (s CommandService) Start(ctx context.Context, ready chan<- struct{}) error 
 	}
 	go s.pollTcp(ctx, ready)
 	return cmd.Run()
-}
-
-// Log the command output.
-func (s CommandService) Write(data []byte) (int, error) {
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		log.Printf("%v: %v", s.Name, line)
-	}
-	return len(data), nil
 }
 
 // Polls the command tcp port until it is ready.
@@ -70,4 +61,17 @@ func (s CommandService) pollTcp(ctx context.Context, ready chan<- struct{}) {
 		case <-time.After(CommandPollInterval):
 		}
 	}
+}
+
+type commandLogger struct {
+	Name string
+}
+
+// Log the command output.
+func (s commandLogger) Write(data []byte) (int, error) {
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		log.Printf("%v: %v", s.Name, line)
+	}
+	return len(data), nil
 }
