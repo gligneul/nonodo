@@ -26,7 +26,7 @@ func (s echoService) String() string {
 func (s echoService) Start(ctx context.Context, ready chan<- struct{}) error {
 	client, err := rollup.NewClientWithResponses(s.rollupEndpoint)
 	if err != nil {
-		return fmt.Errorf("echo: %v", err)
+		return fmt.Errorf("echo: %w", err)
 	}
 
 	ready <- struct{}{}
@@ -37,7 +37,7 @@ func (s echoService) Start(ctx context.Context, ready chan<- struct{}) error {
 	for {
 		finishResp, err := client.FinishWithResponse(ctx, finishReq)
 		if err != nil {
-			return fmt.Errorf("echo: %v", err)
+			return fmt.Errorf("echo: %w", err)
 		}
 		if finishResp.StatusCode() == http.StatusAccepted {
 			continue
@@ -54,7 +54,7 @@ func (s echoService) Start(ctx context.Context, ready chan<- struct{}) error {
 		case rollup.AdvanceState:
 			advance, err := finishBody.Data.AsAdvance()
 			if err != nil {
-				return fmt.Errorf("echo: failed to parser advance: %v", err)
+				return fmt.Errorf("echo: failed to parser advance: %w", err)
 			}
 			if err := handleAdvance(ctx, client, advance); err != nil {
 				return err
@@ -62,7 +62,7 @@ func (s echoService) Start(ctx context.Context, ready chan<- struct{}) error {
 		case rollup.InspectState:
 			inspect, err := finishBody.Data.AsInspect()
 			if err != nil {
-				return fmt.Errorf("echo: failed to parser inspect: %v", err)
+				return fmt.Errorf("echo: failed to parser inspect: %w", err)
 			}
 			if err := handleInspect(ctx, client, inspect); err != nil {
 				return err
@@ -87,7 +87,7 @@ func handleAdvance(
 	}
 	voucherResp, err := client.AddVoucher(ctx, voucherReq)
 	if err != nil {
-		return fmt.Errorf("echo: %v", err)
+		return fmt.Errorf("echo: %w", err)
 	}
 	if voucherResp.StatusCode != http.StatusOK {
 		return fmt.Errorf("echo: failed to add report")
@@ -99,7 +99,7 @@ func handleAdvance(
 	}
 	noticeResp, err := client.AddNotice(ctx, noticeReq)
 	if err != nil {
-		return fmt.Errorf("echo: %v", err)
+		return fmt.Errorf("echo: %w", err)
 	}
 	if noticeResp.StatusCode != http.StatusOK {
 		return fmt.Errorf("echo: failed to add notice")
@@ -111,7 +111,7 @@ func handleAdvance(
 	}
 	reportResp, err := client.AddReport(ctx, reportReq)
 	if err != nil {
-		return fmt.Errorf("echo: %v", err)
+		return fmt.Errorf("echo: %w", err)
 	}
 	if reportResp.StatusCode != http.StatusOK {
 		return fmt.Errorf("echo: failed to add report")
@@ -131,7 +131,7 @@ func handleInspect(
 	reportReq := rollup.Report(inspect)
 	reportResp, err := client.AddReport(ctx, reportReq)
 	if err != nil {
-		return fmt.Errorf("echo: %v", err)
+		return fmt.Errorf("echo: %w", err)
 	}
 	if reportResp.StatusCode != http.StatusOK {
 		return fmt.Errorf("echo: failed to add report")

@@ -31,7 +31,7 @@ func (s AnvilService) Start(ctx context.Context, ready chan<- struct{}) error {
 	// create temp dir
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		return fmt.Errorf("anvil: failed to create temp dir: %v", err)
+		return fmt.Errorf("anvil: failed to create temp dir: %w", err)
 	}
 	defer func() {
 		err := os.RemoveAll(tempDir)
@@ -45,7 +45,7 @@ func (s AnvilService) Start(ctx context.Context, ready chan<- struct{}) error {
 	const permissions = 0644
 	err = os.WriteFile(stateFile, devnetState, permissions)
 	if err != nil {
-		return fmt.Errorf("anvil: failed to write state file: %v", err)
+		return fmt.Errorf("anvil: failed to write state file: %w", err)
 	}
 
 	// start command

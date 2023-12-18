@@ -55,7 +55,7 @@ func (s InputterService) Start(ctx context.Context, ready chan<- struct{}) error
 	filter := []common.Address{s.ApplicationAddress}
 	sub, err := inputBox.WatchInputAdded(&opts, logs, filter, nil)
 	if err != nil {
-		return fmt.Errorf("failed to watch inputs: %v", err)
+		return fmt.Errorf("failed to watch inputs: %w", err)
 	}
 
 	ready <- struct{}{}
@@ -68,7 +68,7 @@ func (s InputterService) Start(ctx context.Context, ready chan<- struct{}) error
 		case log := <-logs:
 			header, err := client.HeaderByHash(ctx, log.Raw.BlockHash)
 			if err != nil {
-				return fmt.Errorf("failed to get tx header: %v", err)
+				return fmt.Errorf("failed to get tx header: %w", err)
 			}
 			s.Model.AddAdvanceInput(
 				log.Sender,

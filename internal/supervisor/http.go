@@ -38,7 +38,7 @@ func (s HttpService) Start(ctx context.Context, ready chan<- struct{}) error {
 	go func() {
 		<-ctx.Done()
 		err := server.Shutdown(ctx)
-		if err != nil {
+		if err != nil && !errors.Is(err, context.Canceled) {
 			log.Printf("%v: error shutting down http server: %v", s, err)
 		}
 	}()

@@ -30,7 +30,7 @@ func AddInput(payload []byte) error {
 	log.Printf(`calling: "%v"`, strings.Join(cmd.Args, `" "`))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("cast: %v: %v", err, string(output))
+		return fmt.Errorf("cast: %w: %v", err, string(output))
 	}
 	return nil
 }
