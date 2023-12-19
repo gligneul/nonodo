@@ -5,6 +5,7 @@
 package inspect
 
 import (
+	"io"
 	"net/http"
 	"time"
 
@@ -29,25 +30,20 @@ type inspectAPI struct {
 	model *model.NonodoModel
 }
 
-// Handle requests to /.
+// Handle POST requests to /.
 func (a *inspectAPI) InspectPost(c echo.Context) error {
-	contentType := c.Request().Header["Content-Type"]
-	if len(contentType) != 1 || contentType[0] != "application/octet-stream" {
-		return c.String(http.StatusUnsupportedMediaType, "invalid content type")
-	}
-	var payload []byte
-	err := (&echo.DefaultBinder{}).BindBody(c, &payload)
+	payload, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return nil
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 	return a.inspect(c, payload)
 }
 
-// Handle requests to /{payload}.
+// Handle GET requests to /{payload}.
 func (a *inspectAPI) Inspect(c echo.Context, payload string) error {
 	payloadBytes, err := hexutil.Decode(payload)
 	if err != nil {
-		return c.String(http.StatusBadRequest, "invalid hex payload")
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 	return a.inspect(c, payloadBytes)
 }
