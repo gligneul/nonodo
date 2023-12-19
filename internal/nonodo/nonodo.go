@@ -17,6 +17,7 @@ import (
 	"github.com/gligneul/nonodo/internal/inputter"
 	"github.com/gligneul/nonodo/internal/inspect"
 	"github.com/gligneul/nonodo/internal/model"
+	"github.com/gligneul/nonodo/internal/reader"
 	"github.com/gligneul/nonodo/internal/rollup"
 	"github.com/gligneul/nonodo/internal/supervisor"
 	"github.com/labstack/echo/v4"
@@ -57,8 +58,10 @@ func Run(ctx context.Context, opts NonodoOpts) {
 	model := model.NewNonodoModel()
 	e := echo.New()
 	e.Use(middleware.CORS())
+	e.Use(middleware.Recover())
 	rollup.Register(e, model)
 	inspect.Register(e, model)
+	reader.Register(e, model)
 
 	var services []supervisor.Service
 	services = append(services, foundry.AnvilService{

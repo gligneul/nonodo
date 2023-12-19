@@ -6,6 +6,7 @@ TODO
   - Add input with accept
   - Add inspect input
 - Review documentation
+- Add generate tools to tools.go
 - Add changelog
 - Add binary release
   - https://github.com/marketplace/actions/go-release-binaries
