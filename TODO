@@ -3,6 +3,8 @@ TODO
 - Add GraphQL API
   - https://github.com/yuuu/gqlgen-echo-sample
 - Add nonodo (integration) tests
+  - Add input with accept
+  - Add inspect input
 - Review documentation
 - Add changelog
 - Add binary release
@@ -18,3 +20,10 @@ TODO
 - Add inspect API tests
 - Add graphql API tests
 - Add support to pagination in GraphQL
+- Load custom Anvil state
+  - Add documentation explaining how to generate the state
+  - Add option to extract the base state
+- Add option to start dapp as sub-process
+- Add compatibility table
+  - Rollups node version
+  - Sunodo version
