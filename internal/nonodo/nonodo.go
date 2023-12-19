@@ -11,6 +11,7 @@ import (
 	"log"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gligneul/nonodo/internal/foundry"
@@ -52,6 +53,8 @@ func NewNonodoOpts() NonodoOpts {
 
 // Start nonodo.
 func Run(ctx context.Context, opts NonodoOpts) {
+	startTime := time.Now()
+
 	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
@@ -89,7 +92,16 @@ func Run(ctx context.Context, opts NonodoOpts) {
 		Name:     "nonodo",
 		Services: services,
 	}
-	if err := supervisor.Serve(ctx, super); err != nil {
+	ready := make(chan struct{}, 1)
+	go func() {
+		select {
+		case <-ready:
+			duration := time.Since(startTime)
+			log.Printf("nonodo: ready after %v", duration)
+		case <-ctx.Done():
+		}
+	}()
+	if err := super.Start(ctx, ready); err != nil {
 		log.Print(err)
 	}
 }
