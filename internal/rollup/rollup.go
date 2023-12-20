@@ -4,7 +4,7 @@
 // This package contains the bindings for the rollup OpenAPI spec.
 package rollup
 
-//go:generate oapi-codegen -config=oapi.yaml ../../api/rollup.yaml
+//go:generate go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen -config=oapi.yaml ../../api/rollup.yaml
 
 import (
 	"net/http"

@@ -14,7 +14,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-//go:generate oapi-codegen -config=oapi.yaml ../../api/inspect.yaml
+//go:generate go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen -config=oapi.yaml ../../api/inspect.yaml
 
 const InspectRetries = 50
 const InspectPollInterval = time.Millisecond * 100

@@ -21,6 +21,11 @@ jobs:
       with:
           version: latest
 
+    - name: Check generate
+      run: |
+        go generate ./...
+        git diff --quiet
+
     - name: Build
       run: go build -v ./...
 

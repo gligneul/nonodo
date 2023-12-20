@@ -4,10 +4,12 @@ TODO
   - Add input with accept
   - Add inspect input
 - Review documentation
-- Add generate tools to tools.go
 - Add changelog
 - Add binary release
   - https://github.com/marketplace/actions/go-release-binaries
+- Load custom Anvil state
+  - Add documentation explaining how to generate the state
+  - Add option to extract the base state
 
 - Add tests for inputter
 - Detect genesis block automatically
@@ -18,9 +20,6 @@ TODO
 - Add inspect API tests
 - Add graphql API tests
 - Add support to pagination in GraphQL
-- Load custom Anvil state
-  - Add documentation explaining how to generate the state
-  - Add option to extract the base state
 - Add option to start dapp as sub-process
 - Add compatibility table
   - Rollups node version
