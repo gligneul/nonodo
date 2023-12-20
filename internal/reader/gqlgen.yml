@@ -6,16 +6,52 @@ exec:
   package: graph
 
 model:
-  filename: graph/model/models_gen.go
+  filename: model/generated.go
   package: model
 
 resolver:
   layout: follow-schema
-  dir: graph
-  package: graph
+  dir: .
+  package: reader
   filename_template: "{name}.resolvers.go"
 
 models:
   BigInt:
     model:
       - github.com/99designs/gqlgen/graphql.ID
+  Input:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.Input
+  Voucher:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.Voucher
+  Notice:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.Notice
+  Report:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.Report
+  InputConnection:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.InputConnection
+  InputEdge:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.InputEdge
+  VoucherConnection:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.VoucherConnection
+  VoucherEdge:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.VoucherEdge
+  NoticeConnection:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.NoticeConnection
+  NoticeEdge:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.NoticeEdge
+  ReportConnection:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.ReportConnection
+  ReportEdge:
+    model:
+      - github.com/gligneul/nonodo/internal/reader/model.ReportEdge

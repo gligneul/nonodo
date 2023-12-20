@@ -13,7 +13,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/gligneul/nonodo/internal/reader/graph/model"
+	"github.com/gligneul/nonodo/internal/reader/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -38,7 +38,11 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Input() InputResolver
+	Notice() NoticeResolver
 	Query() QueryResolver
+	Report() ReportResolver
+	Voucher() VoucherResolver
 }
 
 type DirectiveRoot struct {
@@ -160,15 +164,32 @@ type ComplexityRoot struct {
 	}
 }
 
+type InputResolver interface {
+	Voucher(ctx context.Context, obj *model.Input, index int) (*model.Voucher, error)
+	Notice(ctx context.Context, obj *model.Input, index int) (*model.Notice, error)
+	Report(ctx context.Context, obj *model.Input, index int) (*model.Report, error)
+	Vouchers(ctx context.Context, obj *model.Input, first *int, last *int, after *string, before *string) (*model.Connection[*model.Voucher], error)
+	Notices(ctx context.Context, obj *model.Input, first *int, last *int, after *string, before *string) (*model.Connection[*model.Notice], error)
+	Reports(ctx context.Context, obj *model.Input, first *int, last *int, after *string, before *string) (*model.Connection[*model.Report], error)
+}
+type NoticeResolver interface {
+	Input(ctx context.Context, obj *model.Notice) (*model.Input, error)
+}
 type QueryResolver interface {
 	Input(ctx context.Context, index int) (*model.Input, error)
 	Voucher(ctx context.Context, voucherIndex int, inputIndex int) (*model.Voucher, error)
 	Notice(ctx context.Context, noticeIndex int, inputIndex int) (*model.Notice, error)
 	Report(ctx context.Context, reportIndex int, inputIndex int) (*model.Report, error)
-	Inputs(ctx context.Context, first *int, last *int, after *string, before *string, where *model.InputFilter) (*model.InputConnection, error)
-	Vouchers(ctx context.Context, first *int, last *int, after *string, before *string) (*model.VoucherConnection, error)
-	Notices(ctx context.Context, first *int, last *int, after *string, before *string) (*model.NoticeConnection, error)
-	Reports(ctx context.Context, first *int, last *int, after *string, before *string) (*model.ReportConnection, error)
+	Inputs(ctx context.Context, first *int, last *int, after *string, before *string, where *model.InputFilter) (*model.Connection[*model.Input], error)
+	Vouchers(ctx context.Context, first *int, last *int, after *string, before *string) (*model.Connection[*model.Voucher], error)
+	Notices(ctx context.Context, first *int, last *int, after *string, before *string) (*model.Connection[*model.Notice], error)
+	Reports(ctx context.Context, first *int, last *int, after *string, before *string) (*model.Connection[*model.Report], error)
+}
+type ReportResolver interface {
+	Input(ctx context.Context, obj *model.Report) (*model.Input, error)
+}
+type VoucherResolver interface {
+	Input(ctx context.Context, obj *model.Voucher) (*model.Input, error)
 }
 
 type executableSchema struct {
@@ -1284,7 +1305,7 @@ func (ec *executionContext) field_Query_inputs_args(ctx context.Context, rawArgs
 	var arg4 *model.InputFilter
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg4, err = ec.unmarshalOInputFilter2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInputFilter(ctx, tmp)
+		arg4, err = ec.unmarshalOInputFilter2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐInputFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1601,7 +1622,7 @@ func (ec *executionContext) _Input_status(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(model.CompletionStatus)
 	fc.Result = res
-	return ec.marshalNCompletionStatus2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐCompletionStatus(ctx, field.Selections, res)
+	return ec.marshalNCompletionStatus2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐCompletionStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Input_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1807,7 +1828,7 @@ func (ec *executionContext) _Input_voucher(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Voucher, nil
+		return ec.resolvers.Input().Voucher(rctx, obj, fc.Args["index"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1821,15 +1842,15 @@ func (ec *executionContext) _Input_voucher(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*model.Voucher)
 	fc.Result = res
-	return ec.marshalNVoucher2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucher(ctx, field.Selections, res)
+	return ec.marshalNVoucher2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐVoucher(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Input_voucher(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Input",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "index":
@@ -1874,7 +1895,7 @@ func (ec *executionContext) _Input_notice(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Notice, nil
+		return ec.resolvers.Input().Notice(rctx, obj, fc.Args["index"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1888,15 +1909,15 @@ func (ec *executionContext) _Input_notice(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*model.Notice)
 	fc.Result = res
-	return ec.marshalNNotice2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNotice(ctx, field.Selections, res)
+	return ec.marshalNNotice2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐNotice(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Input_notice(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Input",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "index":
@@ -1939,7 +1960,7 @@ func (ec *executionContext) _Input_report(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Report, nil
+		return ec.resolvers.Input().Report(rctx, obj, fc.Args["index"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1953,15 +1974,15 @@ func (ec *executionContext) _Input_report(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*model.Report)
 	fc.Result = res
-	return ec.marshalNReport2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReport(ctx, field.Selections, res)
+	return ec.marshalNReport2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐReport(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Input_report(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Input",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "index":
@@ -2002,7 +2023,7 @@ func (ec *executionContext) _Input_vouchers(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Vouchers, nil
+		return ec.resolvers.Input().Vouchers(rctx, obj, fc.Args["first"].(*int), fc.Args["last"].(*int), fc.Args["after"].(*string), fc.Args["before"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2014,17 +2035,17 @@ func (ec *executionContext) _Input_vouchers(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.VoucherConnection)
+	res := resTmp.(*model.Connection[*model.Voucher])
 	fc.Result = res
-	return ec.marshalNVoucherConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucherConnection(ctx, field.Selections, res)
+	return ec.marshalNVoucherConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Input_vouchers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Input",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "totalCount":
@@ -2065,7 +2086,7 @@ func (ec *executionContext) _Input_notices(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Notices, nil
+		return ec.resolvers.Input().Notices(rctx, obj, fc.Args["first"].(*int), fc.Args["last"].(*int), fc.Args["after"].(*string), fc.Args["before"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2077,17 +2098,17 @@ func (ec *executionContext) _Input_notices(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.NoticeConnection)
+	res := resTmp.(*model.Connection[*model.Notice])
 	fc.Result = res
-	return ec.marshalNNoticeConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNoticeConnection(ctx, field.Selections, res)
+	return ec.marshalNNoticeConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Input_notices(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Input",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "totalCount":
@@ -2128,7 +2149,7 @@ func (ec *executionContext) _Input_reports(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Reports, nil
+		return ec.resolvers.Input().Reports(rctx, obj, fc.Args["first"].(*int), fc.Args["last"].(*int), fc.Args["after"].(*string), fc.Args["before"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2140,17 +2161,17 @@ func (ec *executionContext) _Input_reports(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ReportConnection)
+	res := resTmp.(*model.Connection[*model.Report])
 	fc.Result = res
-	return ec.marshalNReportConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReportConnection(ctx, field.Selections, res)
+	return ec.marshalNReportConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Input_reports(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Input",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "totalCount":
@@ -2177,7 +2198,7 @@ func (ec *executionContext) fieldContext_Input_reports(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _InputConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.InputConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _InputConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Input]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InputConnection_totalCount(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2221,7 +2242,7 @@ func (ec *executionContext) fieldContext_InputConnection_totalCount(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _InputConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.InputConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _InputConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Input]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InputConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2247,9 +2268,9 @@ func (ec *executionContext) _InputConnection_edges(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.InputEdge)
+	res := resTmp.([]*model.Edge[*model.Input])
 	fc.Result = res
-	return ec.marshalNInputEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInputEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNInputEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_InputConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2271,7 +2292,7 @@ func (ec *executionContext) fieldContext_InputConnection_edges(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _InputConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.InputConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _InputConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Input]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InputConnection_pageInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2299,7 +2320,7 @@ func (ec *executionContext) _InputConnection_pageInfo(ctx context.Context, field
 	}
 	res := resTmp.(*model.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_InputConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2325,7 +2346,7 @@ func (ec *executionContext) fieldContext_InputConnection_pageInfo(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _InputEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.InputEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _InputEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.Edge[*model.Input]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InputEdge_node(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2353,7 +2374,7 @@ func (ec *executionContext) _InputEdge_node(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*model.Input)
 	fc.Result = res
-	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInput(ctx, field.Selections, res)
+	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐInput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_InputEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2395,7 +2416,7 @@ func (ec *executionContext) fieldContext_InputEdge_node(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _InputEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.InputEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _InputEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.Edge[*model.Input]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InputEdge_cursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2409,7 +2430,7 @@ func (ec *executionContext) _InputEdge_cursor(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
+		return obj.Cursor(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2430,7 +2451,7 @@ func (ec *executionContext) fieldContext_InputEdge_cursor(ctx context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "InputEdge",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -2497,7 +2518,7 @@ func (ec *executionContext) _Notice_input(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Input, nil
+		return ec.resolvers.Notice().Input(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2511,15 +2532,15 @@ func (ec *executionContext) _Notice_input(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*model.Input)
 	fc.Result = res
-	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInput(ctx, field.Selections, res)
+	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐInput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Notice_input(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Notice",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "index":
@@ -2622,7 +2643,7 @@ func (ec *executionContext) _Notice_proof(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*model.Proof)
 	fc.Result = res
-	return ec.marshalOProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐProof(ctx, field.Selections, res)
+	return ec.marshalOProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐProof(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Notice_proof(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2644,7 +2665,7 @@ func (ec *executionContext) fieldContext_Notice_proof(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _NoticeConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.NoticeConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _NoticeConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Notice]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NoticeConnection_totalCount(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2688,7 +2709,7 @@ func (ec *executionContext) fieldContext_NoticeConnection_totalCount(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _NoticeConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.NoticeConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _NoticeConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Notice]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NoticeConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2714,9 +2735,9 @@ func (ec *executionContext) _NoticeConnection_edges(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.NoticeEdge)
+	res := resTmp.([]*model.Edge[*model.Notice])
 	fc.Result = res
-	return ec.marshalNNoticeEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNoticeEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNNoticeEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_NoticeConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2738,7 +2759,7 @@ func (ec *executionContext) fieldContext_NoticeConnection_edges(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _NoticeConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.NoticeConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _NoticeConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Notice]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NoticeConnection_pageInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2766,7 +2787,7 @@ func (ec *executionContext) _NoticeConnection_pageInfo(ctx context.Context, fiel
 	}
 	res := resTmp.(*model.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_NoticeConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2792,7 +2813,7 @@ func (ec *executionContext) fieldContext_NoticeConnection_pageInfo(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _NoticeEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.NoticeEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _NoticeEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.Edge[*model.Notice]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NoticeEdge_node(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2820,7 +2841,7 @@ func (ec *executionContext) _NoticeEdge_node(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*model.Notice)
 	fc.Result = res
-	return ec.marshalNNotice2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNotice(ctx, field.Selections, res)
+	return ec.marshalNNotice2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐNotice(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_NoticeEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2846,7 +2867,7 @@ func (ec *executionContext) fieldContext_NoticeEdge_node(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _NoticeEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.NoticeEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _NoticeEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.Edge[*model.Notice]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NoticeEdge_cursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2860,7 +2881,7 @@ func (ec *executionContext) _NoticeEdge_cursor(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
+		return obj.Cursor(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2881,7 +2902,7 @@ func (ec *executionContext) fieldContext_NoticeEdge_cursor(ctx context.Context, 
 	fc = &graphql.FieldContext{
 		Object:     "NoticeEdge",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -3440,7 +3461,7 @@ func (ec *executionContext) _Proof_validity(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*model.OutputValidityProof)
 	fc.Result = res
-	return ec.marshalNOutputValidityProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐOutputValidityProof(ctx, field.Selections, res)
+	return ec.marshalNOutputValidityProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐOutputValidityProof(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Proof_validity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3546,7 +3567,7 @@ func (ec *executionContext) _Query_input(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*model.Input)
 	fc.Result = res
-	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInput(ctx, field.Selections, res)
+	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐInput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_input(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3627,7 +3648,7 @@ func (ec *executionContext) _Query_voucher(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*model.Voucher)
 	fc.Result = res
-	return ec.marshalNVoucher2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucher(ctx, field.Selections, res)
+	return ec.marshalNVoucher2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐVoucher(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_voucher(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3694,7 +3715,7 @@ func (ec *executionContext) _Query_notice(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*model.Notice)
 	fc.Result = res
-	return ec.marshalNNotice2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNotice(ctx, field.Selections, res)
+	return ec.marshalNNotice2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐNotice(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_notice(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3759,7 +3780,7 @@ func (ec *executionContext) _Query_report(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*model.Report)
 	fc.Result = res
-	return ec.marshalNReport2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReport(ctx, field.Selections, res)
+	return ec.marshalNReport2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐReport(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_report(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3820,9 +3841,9 @@ func (ec *executionContext) _Query_inputs(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.InputConnection)
+	res := resTmp.(*model.Connection[*model.Input])
 	fc.Result = res
-	return ec.marshalNInputConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInputConnection(ctx, field.Selections, res)
+	return ec.marshalNInputConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_inputs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3883,9 +3904,9 @@ func (ec *executionContext) _Query_vouchers(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.VoucherConnection)
+	res := resTmp.(*model.Connection[*model.Voucher])
 	fc.Result = res
-	return ec.marshalNVoucherConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucherConnection(ctx, field.Selections, res)
+	return ec.marshalNVoucherConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_vouchers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3946,9 +3967,9 @@ func (ec *executionContext) _Query_notices(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.NoticeConnection)
+	res := resTmp.(*model.Connection[*model.Notice])
 	fc.Result = res
-	return ec.marshalNNoticeConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNoticeConnection(ctx, field.Selections, res)
+	return ec.marshalNNoticeConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_notices(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4009,9 +4030,9 @@ func (ec *executionContext) _Query_reports(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ReportConnection)
+	res := resTmp.(*model.Connection[*model.Report])
 	fc.Result = res
-	return ec.marshalNReportConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReportConnection(ctx, field.Selections, res)
+	return ec.marshalNReportConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_reports(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4233,7 +4254,7 @@ func (ec *executionContext) _Report_input(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Input, nil
+		return ec.resolvers.Report().Input(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4247,15 +4268,15 @@ func (ec *executionContext) _Report_input(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*model.Input)
 	fc.Result = res
-	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInput(ctx, field.Selections, res)
+	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐInput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Report_input(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Report",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "index":
@@ -4333,7 +4354,7 @@ func (ec *executionContext) fieldContext_Report_payload(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _ReportConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ReportConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _ReportConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Report]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReportConnection_totalCount(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4377,7 +4398,7 @@ func (ec *executionContext) fieldContext_ReportConnection_totalCount(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _ReportConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.ReportConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _ReportConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Report]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReportConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4403,9 +4424,9 @@ func (ec *executionContext) _ReportConnection_edges(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.ReportEdge)
+	res := resTmp.([]*model.Edge[*model.Report])
 	fc.Result = res
-	return ec.marshalNReportEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReportEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNReportEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ReportConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4427,7 +4448,7 @@ func (ec *executionContext) fieldContext_ReportConnection_edges(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _ReportConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.ReportConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _ReportConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Report]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReportConnection_pageInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4455,7 +4476,7 @@ func (ec *executionContext) _ReportConnection_pageInfo(ctx context.Context, fiel
 	}
 	res := resTmp.(*model.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ReportConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4481,7 +4502,7 @@ func (ec *executionContext) fieldContext_ReportConnection_pageInfo(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _ReportEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.ReportEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _ReportEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.Edge[*model.Report]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReportEdge_node(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4509,7 +4530,7 @@ func (ec *executionContext) _ReportEdge_node(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*model.Report)
 	fc.Result = res
-	return ec.marshalNReport2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReport(ctx, field.Selections, res)
+	return ec.marshalNReport2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐReport(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ReportEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4533,7 +4554,7 @@ func (ec *executionContext) fieldContext_ReportEdge_node(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _ReportEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.ReportEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _ReportEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.Edge[*model.Report]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReportEdge_cursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4547,7 +4568,7 @@ func (ec *executionContext) _ReportEdge_cursor(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
+		return obj.Cursor(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4568,7 +4589,7 @@ func (ec *executionContext) fieldContext_ReportEdge_cursor(ctx context.Context, 
 	fc = &graphql.FieldContext{
 		Object:     "ReportEdge",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -4635,7 +4656,7 @@ func (ec *executionContext) _Voucher_input(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Input, nil
+		return ec.resolvers.Voucher().Input(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4649,15 +4670,15 @@ func (ec *executionContext) _Voucher_input(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*model.Input)
 	fc.Result = res
-	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInput(ctx, field.Selections, res)
+	return ec.marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐInput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Voucher_input(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Voucher",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "index":
@@ -4804,7 +4825,7 @@ func (ec *executionContext) _Voucher_proof(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*model.Proof)
 	fc.Result = res
-	return ec.marshalOProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐProof(ctx, field.Selections, res)
+	return ec.marshalOProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐProof(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Voucher_proof(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4826,7 +4847,7 @@ func (ec *executionContext) fieldContext_Voucher_proof(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _VoucherConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.VoucherConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _VoucherConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Voucher]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VoucherConnection_totalCount(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4870,7 +4891,7 @@ func (ec *executionContext) fieldContext_VoucherConnection_totalCount(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _VoucherConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.VoucherConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _VoucherConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Voucher]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VoucherConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4896,9 +4917,9 @@ func (ec *executionContext) _VoucherConnection_edges(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.VoucherEdge)
+	res := resTmp.([]*model.Edge[*model.Voucher])
 	fc.Result = res
-	return ec.marshalNVoucherEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucherEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNVoucherEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_VoucherConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4920,7 +4941,7 @@ func (ec *executionContext) fieldContext_VoucherConnection_edges(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _VoucherConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.VoucherConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _VoucherConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.Connection[*model.Voucher]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VoucherConnection_pageInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4948,7 +4969,7 @@ func (ec *executionContext) _VoucherConnection_pageInfo(ctx context.Context, fie
 	}
 	res := resTmp.(*model.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_VoucherConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4974,7 +4995,7 @@ func (ec *executionContext) fieldContext_VoucherConnection_pageInfo(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _VoucherEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.VoucherEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _VoucherEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.Edge[*model.Voucher]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VoucherEdge_node(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5002,7 +5023,7 @@ func (ec *executionContext) _VoucherEdge_node(ctx context.Context, field graphql
 	}
 	res := resTmp.(*model.Voucher)
 	fc.Result = res
-	return ec.marshalNVoucher2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucher(ctx, field.Selections, res)
+	return ec.marshalNVoucher2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐVoucher(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_VoucherEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5030,7 +5051,7 @@ func (ec *executionContext) fieldContext_VoucherEdge_node(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _VoucherEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.VoucherEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _VoucherEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.Edge[*model.Voucher]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VoucherEdge_cursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5044,7 +5065,7 @@ func (ec *executionContext) _VoucherEdge_cursor(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
+		return obj.Cursor(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5065,7 +5086,7 @@ func (ec *executionContext) fieldContext_VoucherEdge_cursor(ctx context.Context,
 	fc = &graphql.FieldContext{
 		Object:     "VoucherEdge",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -6903,63 +6924,249 @@ func (ec *executionContext) _Input(ctx context.Context, sel ast.SelectionSet, ob
 		case "index":
 			out.Values[i] = ec._Input_index(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "status":
 			out.Values[i] = ec._Input_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "msgSender":
 			out.Values[i] = ec._Input_msgSender(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "timestamp":
 			out.Values[i] = ec._Input_timestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "blockNumber":
 			out.Values[i] = ec._Input_blockNumber(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "payload":
 			out.Values[i] = ec._Input_payload(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "voucher":
-			out.Values[i] = ec._Input_voucher(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Input_voucher(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "notice":
-			out.Values[i] = ec._Input_notice(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Input_notice(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "report":
-			out.Values[i] = ec._Input_report(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Input_report(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "vouchers":
-			out.Values[i] = ec._Input_vouchers(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Input_vouchers(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "notices":
-			out.Values[i] = ec._Input_notices(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Input_notices(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "reports":
-			out.Values[i] = ec._Input_reports(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Input_reports(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6985,7 +7192,7 @@ func (ec *executionContext) _Input(ctx context.Context, sel ast.SelectionSet, ob
 
 var inputConnectionImplementors = []string{"InputConnection"}
 
-func (ec *executionContext) _InputConnection(ctx context.Context, sel ast.SelectionSet, obj *model.InputConnection) graphql.Marshaler {
+func (ec *executionContext) _InputConnection(ctx context.Context, sel ast.SelectionSet, obj *model.Connection[*model.Input]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, inputConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7034,7 +7241,7 @@ func (ec *executionContext) _InputConnection(ctx context.Context, sel ast.Select
 
 var inputEdgeImplementors = []string{"InputEdge"}
 
-func (ec *executionContext) _InputEdge(ctx context.Context, sel ast.SelectionSet, obj *model.InputEdge) graphql.Marshaler {
+func (ec *executionContext) _InputEdge(ctx context.Context, sel ast.SelectionSet, obj *model.Edge[*model.Input]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, inputEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7090,17 +7297,48 @@ func (ec *executionContext) _Notice(ctx context.Context, sel ast.SelectionSet, o
 		case "index":
 			out.Values[i] = ec._Notice_index(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "input":
-			out.Values[i] = ec._Notice_input(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Notice_input(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "payload":
 			out.Values[i] = ec._Notice_payload(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "proof":
 			out.Values[i] = ec._Notice_proof(ctx, field, obj)
@@ -7129,7 +7367,7 @@ func (ec *executionContext) _Notice(ctx context.Context, sel ast.SelectionSet, o
 
 var noticeConnectionImplementors = []string{"NoticeConnection"}
 
-func (ec *executionContext) _NoticeConnection(ctx context.Context, sel ast.SelectionSet, obj *model.NoticeConnection) graphql.Marshaler {
+func (ec *executionContext) _NoticeConnection(ctx context.Context, sel ast.SelectionSet, obj *model.Connection[*model.Notice]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, noticeConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7178,7 +7416,7 @@ func (ec *executionContext) _NoticeConnection(ctx context.Context, sel ast.Selec
 
 var noticeEdgeImplementors = []string{"NoticeEdge"}
 
-func (ec *executionContext) _NoticeEdge(ctx context.Context, sel ast.SelectionSet, obj *model.NoticeEdge) graphql.Marshaler {
+func (ec *executionContext) _NoticeEdge(ctx context.Context, sel ast.SelectionSet, obj *model.Edge[*model.Notice]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, noticeEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7626,17 +7864,48 @@ func (ec *executionContext) _Report(ctx context.Context, sel ast.SelectionSet, o
 		case "index":
 			out.Values[i] = ec._Report_index(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "input":
-			out.Values[i] = ec._Report_input(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Report_input(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "payload":
 			out.Values[i] = ec._Report_payload(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -7663,7 +7932,7 @@ func (ec *executionContext) _Report(ctx context.Context, sel ast.SelectionSet, o
 
 var reportConnectionImplementors = []string{"ReportConnection"}
 
-func (ec *executionContext) _ReportConnection(ctx context.Context, sel ast.SelectionSet, obj *model.ReportConnection) graphql.Marshaler {
+func (ec *executionContext) _ReportConnection(ctx context.Context, sel ast.SelectionSet, obj *model.Connection[*model.Report]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, reportConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7712,7 +7981,7 @@ func (ec *executionContext) _ReportConnection(ctx context.Context, sel ast.Selec
 
 var reportEdgeImplementors = []string{"ReportEdge"}
 
-func (ec *executionContext) _ReportEdge(ctx context.Context, sel ast.SelectionSet, obj *model.ReportEdge) graphql.Marshaler {
+func (ec *executionContext) _ReportEdge(ctx context.Context, sel ast.SelectionSet, obj *model.Edge[*model.Report]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, reportEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7768,22 +8037,53 @@ func (ec *executionContext) _Voucher(ctx context.Context, sel ast.SelectionSet, 
 		case "index":
 			out.Values[i] = ec._Voucher_index(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "input":
-			out.Values[i] = ec._Voucher_input(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Voucher_input(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "destination":
 			out.Values[i] = ec._Voucher_destination(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "payload":
 			out.Values[i] = ec._Voucher_payload(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "proof":
 			out.Values[i] = ec._Voucher_proof(ctx, field, obj)
@@ -7812,7 +8112,7 @@ func (ec *executionContext) _Voucher(ctx context.Context, sel ast.SelectionSet, 
 
 var voucherConnectionImplementors = []string{"VoucherConnection"}
 
-func (ec *executionContext) _VoucherConnection(ctx context.Context, sel ast.SelectionSet, obj *model.VoucherConnection) graphql.Marshaler {
+func (ec *executionContext) _VoucherConnection(ctx context.Context, sel ast.SelectionSet, obj *model.Connection[*model.Voucher]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, voucherConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7861,7 +8161,7 @@ func (ec *executionContext) _VoucherConnection(ctx context.Context, sel ast.Sele
 
 var voucherEdgeImplementors = []string{"VoucherEdge"}
 
-func (ec *executionContext) _VoucherEdge(ctx context.Context, sel ast.SelectionSet, obj *model.VoucherEdge) graphql.Marshaler {
+func (ec *executionContext) _VoucherEdge(ctx context.Context, sel ast.SelectionSet, obj *model.Edge[*model.Voucher]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, voucherEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -8259,21 +8559,21 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNCompletionStatus2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐCompletionStatus(ctx context.Context, v interface{}) (model.CompletionStatus, error) {
+func (ec *executionContext) unmarshalNCompletionStatus2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐCompletionStatus(ctx context.Context, v interface{}) (model.CompletionStatus, error) {
 	var res model.CompletionStatus
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNCompletionStatus2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐCompletionStatus(ctx context.Context, sel ast.SelectionSet, v model.CompletionStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNCompletionStatus2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐCompletionStatus(ctx context.Context, sel ast.SelectionSet, v model.CompletionStatus) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNInput2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInput(ctx context.Context, sel ast.SelectionSet, v model.Input) graphql.Marshaler {
+func (ec *executionContext) marshalNInput2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐInput(ctx context.Context, sel ast.SelectionSet, v model.Input) graphql.Marshaler {
 	return ec._Input(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInput(ctx context.Context, sel ast.SelectionSet, v *model.Input) graphql.Marshaler {
+func (ec *executionContext) marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐInput(ctx context.Context, sel ast.SelectionSet, v *model.Input) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8283,11 +8583,11 @@ func (ec *executionContext) marshalNInput2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋ
 	return ec._Input(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNInputConnection2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInputConnection(ctx context.Context, sel ast.SelectionSet, v model.InputConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNInputConnection2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v model.Connection[*model.Input]) graphql.Marshaler {
 	return ec._InputConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNInputConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInputConnection(ctx context.Context, sel ast.SelectionSet, v *model.InputConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNInputConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v *model.Connection[*model.Input]) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8297,7 +8597,7 @@ func (ec *executionContext) marshalNInputConnection2ᚖgithubᚗcomᚋgligneul�
 	return ec._InputConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNInputEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInputEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InputEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNInputEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Edge[*model.Input]) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8321,7 +8621,7 @@ func (ec *executionContext) marshalNInputEdge2ᚕᚖgithubᚗcomᚋgligneulᚋno
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNInputEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInputEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNInputEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8341,7 +8641,7 @@ func (ec *executionContext) marshalNInputEdge2ᚕᚖgithubᚗcomᚋgligneulᚋno
 	return ret
 }
 
-func (ec *executionContext) marshalNInputEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInputEdge(ctx context.Context, sel ast.SelectionSet, v *model.InputEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNInputEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdge(ctx context.Context, sel ast.SelectionSet, v *model.Edge[*model.Input]) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8366,11 +8666,11 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalNNotice2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNotice(ctx context.Context, sel ast.SelectionSet, v model.Notice) graphql.Marshaler {
+func (ec *executionContext) marshalNNotice2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐNotice(ctx context.Context, sel ast.SelectionSet, v model.Notice) graphql.Marshaler {
 	return ec._Notice(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNNotice2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNotice(ctx context.Context, sel ast.SelectionSet, v *model.Notice) graphql.Marshaler {
+func (ec *executionContext) marshalNNotice2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐNotice(ctx context.Context, sel ast.SelectionSet, v *model.Notice) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8380,11 +8680,11 @@ func (ec *executionContext) marshalNNotice2ᚖgithubᚗcomᚋgligneulᚋnonodo�
 	return ec._Notice(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNNoticeConnection2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNoticeConnection(ctx context.Context, sel ast.SelectionSet, v model.NoticeConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNNoticeConnection2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v model.Connection[*model.Notice]) graphql.Marshaler {
 	return ec._NoticeConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNNoticeConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNoticeConnection(ctx context.Context, sel ast.SelectionSet, v *model.NoticeConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNNoticeConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v *model.Connection[*model.Notice]) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8394,7 +8694,7 @@ func (ec *executionContext) marshalNNoticeConnection2ᚖgithubᚗcomᚋgligneul�
 	return ec._NoticeConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNNoticeEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNoticeEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NoticeEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNNoticeEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Edge[*model.Notice]) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8418,7 +8718,7 @@ func (ec *executionContext) marshalNNoticeEdge2ᚕᚖgithubᚗcomᚋgligneulᚋn
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNNoticeEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNoticeEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNNoticeEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8438,7 +8738,7 @@ func (ec *executionContext) marshalNNoticeEdge2ᚕᚖgithubᚗcomᚋgligneulᚋn
 	return ret
 }
 
-func (ec *executionContext) marshalNNoticeEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐNoticeEdge(ctx context.Context, sel ast.SelectionSet, v *model.NoticeEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNNoticeEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdge(ctx context.Context, sel ast.SelectionSet, v *model.Edge[*model.Notice]) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8448,7 +8748,7 @@ func (ec *executionContext) marshalNNoticeEdge2ᚖgithubᚗcomᚋgligneulᚋnono
 	return ec._NoticeEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOutputValidityProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐOutputValidityProof(ctx context.Context, sel ast.SelectionSet, v *model.OutputValidityProof) graphql.Marshaler {
+func (ec *executionContext) marshalNOutputValidityProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐOutputValidityProof(ctx context.Context, sel ast.SelectionSet, v *model.OutputValidityProof) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8458,7 +8758,7 @@ func (ec *executionContext) marshalNOutputValidityProof2ᚖgithubᚗcomᚋgligne
 	return ec._OutputValidityProof(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8468,11 +8768,11 @@ func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋgligneulᚋnonodo
 	return ec._PageInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNReport2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReport(ctx context.Context, sel ast.SelectionSet, v model.Report) graphql.Marshaler {
+func (ec *executionContext) marshalNReport2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐReport(ctx context.Context, sel ast.SelectionSet, v model.Report) graphql.Marshaler {
 	return ec._Report(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNReport2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReport(ctx context.Context, sel ast.SelectionSet, v *model.Report) graphql.Marshaler {
+func (ec *executionContext) marshalNReport2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐReport(ctx context.Context, sel ast.SelectionSet, v *model.Report) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8482,11 +8782,11 @@ func (ec *executionContext) marshalNReport2ᚖgithubᚗcomᚋgligneulᚋnonodo�
 	return ec._Report(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNReportConnection2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReportConnection(ctx context.Context, sel ast.SelectionSet, v model.ReportConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNReportConnection2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v model.Connection[*model.Report]) graphql.Marshaler {
 	return ec._ReportConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNReportConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReportConnection(ctx context.Context, sel ast.SelectionSet, v *model.ReportConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNReportConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v *model.Connection[*model.Report]) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8496,7 +8796,7 @@ func (ec *executionContext) marshalNReportConnection2ᚖgithubᚗcomᚋgligneul�
 	return ec._ReportConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNReportEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReportEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ReportEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNReportEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Edge[*model.Report]) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8520,7 +8820,7 @@ func (ec *executionContext) marshalNReportEdge2ᚕᚖgithubᚗcomᚋgligneulᚋn
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNReportEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReportEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNReportEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8540,7 +8840,7 @@ func (ec *executionContext) marshalNReportEdge2ᚕᚖgithubᚗcomᚋgligneulᚋn
 	return ret
 }
 
-func (ec *executionContext) marshalNReportEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐReportEdge(ctx context.Context, sel ast.SelectionSet, v *model.ReportEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNReportEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdge(ctx context.Context, sel ast.SelectionSet, v *model.Edge[*model.Report]) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8597,11 +8897,11 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	return ret
 }
 
-func (ec *executionContext) marshalNVoucher2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucher(ctx context.Context, sel ast.SelectionSet, v model.Voucher) graphql.Marshaler {
+func (ec *executionContext) marshalNVoucher2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐVoucher(ctx context.Context, sel ast.SelectionSet, v model.Voucher) graphql.Marshaler {
 	return ec._Voucher(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNVoucher2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucher(ctx context.Context, sel ast.SelectionSet, v *model.Voucher) graphql.Marshaler {
+func (ec *executionContext) marshalNVoucher2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐVoucher(ctx context.Context, sel ast.SelectionSet, v *model.Voucher) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8611,11 +8911,11 @@ func (ec *executionContext) marshalNVoucher2ᚖgithubᚗcomᚋgligneulᚋnonodo�
 	return ec._Voucher(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNVoucherConnection2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucherConnection(ctx context.Context, sel ast.SelectionSet, v model.VoucherConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNVoucherConnection2githubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v model.Connection[*model.Voucher]) graphql.Marshaler {
 	return ec._VoucherConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNVoucherConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucherConnection(ctx context.Context, sel ast.SelectionSet, v *model.VoucherConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNVoucherConnection2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐConnection(ctx context.Context, sel ast.SelectionSet, v *model.Connection[*model.Voucher]) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8625,7 +8925,7 @@ func (ec *executionContext) marshalNVoucherConnection2ᚖgithubᚗcomᚋgligneul
 	return ec._VoucherConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNVoucherEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucherEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.VoucherEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNVoucherEdge2ᚕᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Edge[*model.Voucher]) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8649,7 +8949,7 @@ func (ec *executionContext) marshalNVoucherEdge2ᚕᚖgithubᚗcomᚋgligneulᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNVoucherEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucherEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNVoucherEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8669,7 +8969,7 @@ func (ec *executionContext) marshalNVoucherEdge2ᚕᚖgithubᚗcomᚋgligneulᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalNVoucherEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐVoucherEdge(ctx context.Context, sel ast.SelectionSet, v *model.VoucherEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNVoucherEdge2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐEdge(ctx context.Context, sel ast.SelectionSet, v *model.Edge[*model.Voucher]) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -8958,7 +9258,7 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalOInputFilter2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐInputFilter(ctx context.Context, v interface{}) (*model.InputFilter, error) {
+func (ec *executionContext) unmarshalOInputFilter2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐInputFilter(ctx context.Context, v interface{}) (*model.InputFilter, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -8982,7 +9282,7 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
-func (ec *executionContext) marshalOProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋgraphᚋmodelᚐProof(ctx context.Context, sel ast.SelectionSet, v *model.Proof) graphql.Marshaler {
+func (ec *executionContext) marshalOProof2ᚖgithubᚗcomᚋgligneulᚋnonodoᚋinternalᚋreaderᚋmodelᚐProof(ctx context.Context, sel ast.SelectionSet, v *model.Proof) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

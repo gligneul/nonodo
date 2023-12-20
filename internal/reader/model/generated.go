@@ -8,88 +8,12 @@ import (
 	"strconv"
 )
 
-// Request submitted to the application to advance its state
-type Input struct {
-	// Input index starting from genesis
-	Index int `json:"index"`
-	// Status of the input
-	Status CompletionStatus `json:"status"`
-	// Address responsible for submitting the input
-	MsgSender string `json:"msgSender"`
-	// Timestamp associated with the input submission, as defined by the base layer's block in which it was recorded
-	Timestamp string `json:"timestamp"`
-	// Number of the base layer block in which the input was recorded
-	BlockNumber string `json:"blockNumber"`
-	// Input payload in Ethereum hex binary format, starting with '0x'
-	Payload string `json:"payload"`
-	// Get a voucher from this particular input given the voucher's index
-	Voucher *Voucher `json:"voucher"`
-	// Get a notice from this particular input given the notice's index
-	Notice *Notice `json:"notice"`
-	// Get a report from this particular input given the report's index
-	Report *Report `json:"report"`
-	// Get vouchers from this particular input with support for pagination
-	Vouchers *VoucherConnection `json:"vouchers"`
-	// Get notices from this particular input with support for pagination
-	Notices *NoticeConnection `json:"notices"`
-	// Get reports from this particular input with support for pagination
-	Reports *ReportConnection `json:"reports"`
-}
-
-// Pagination result
-type InputConnection struct {
-	// Total number of entries that match the query
-	TotalCount int `json:"totalCount"`
-	// Pagination entries returned for the current page
-	Edges []*InputEdge `json:"edges"`
-	// Pagination metadata
-	PageInfo *PageInfo `json:"pageInfo"`
-}
-
-// Pagination entry
-type InputEdge struct {
-	// Node instance
-	Node *Input `json:"node"`
-	// Pagination cursor
-	Cursor string `json:"cursor"`
-}
-
 // Filter object to restrict results depending on input properties
 type InputFilter struct {
 	// Filter only inputs with index lower than a given value
 	IndexLowerThan *int `json:"indexLowerThan,omitempty"`
 	// Filter only inputs with index greater than a given value
 	IndexGreaterThan *int `json:"indexGreaterThan,omitempty"`
-}
-
-// Informational statement that can be validated in the base layer blockchain
-type Notice struct {
-	// Notice index within the context of the input that produced it
-	Index int `json:"index"`
-	// Input whose processing produced the notice
-	Input *Input `json:"input"`
-	// Notice data as a payload in Ethereum hex binary format, starting with '0x'
-	Payload string `json:"payload"`
-	// Proof object that allows this notice to be validated by the base layer blockchain
-	Proof *Proof `json:"proof,omitempty"`
-}
-
-// Pagination result
-type NoticeConnection struct {
-	// Total number of entries that match the query
-	TotalCount int `json:"totalCount"`
-	// Pagination entries returned for the current page
-	Edges []*NoticeEdge `json:"edges"`
-	// Pagination metadata
-	PageInfo *PageInfo `json:"pageInfo"`
-}
-
-// Pagination entry
-type NoticeEdge struct {
-	// Node instance
-	Node *Notice `json:"node"`
-	// Pagination cursor
-	Cursor string `json:"cursor"`
 }
 
 // Validity proof for an output
@@ -130,66 +54,6 @@ type Proof struct {
 	Validity *OutputValidityProof `json:"validity"`
 	// Data that allows the validity proof to be contextualized within submitted claims, given as a payload in Ethereum hex binary format, starting with '0x'
 	Context string `json:"context"`
-}
-
-// Application log or diagnostic information
-type Report struct {
-	// Report index within the context of the input that produced it
-	Index int `json:"index"`
-	// Input whose processing produced the report
-	Input *Input `json:"input"`
-	// Report data as a payload in Ethereum hex binary format, starting with '0x'
-	Payload string `json:"payload"`
-}
-
-// Pagination result
-type ReportConnection struct {
-	// Total number of entries that match the query
-	TotalCount int `json:"totalCount"`
-	// Pagination entries returned for the current page
-	Edges []*ReportEdge `json:"edges"`
-	// Pagination metadata
-	PageInfo *PageInfo `json:"pageInfo"`
-}
-
-// Pagination entry
-type ReportEdge struct {
-	// Node instance
-	Node *Report `json:"node"`
-	// Pagination cursor
-	Cursor string `json:"cursor"`
-}
-
-// Representation of a transaction that can be carried out on the base layer blockchain, such as a transfer of assets
-type Voucher struct {
-	// Voucher index within the context of the input that produced it
-	Index int `json:"index"`
-	// Input whose processing produced the voucher
-	Input *Input `json:"input"`
-	// Transaction destination address in Ethereum hex binary format (20 bytes), starting with '0x'
-	Destination string `json:"destination"`
-	// Transaction payload in Ethereum hex binary format, starting with '0x'
-	Payload string `json:"payload"`
-	// Proof object that allows this voucher to be validated and executed on the base layer blockchain
-	Proof *Proof `json:"proof,omitempty"`
-}
-
-// Pagination result
-type VoucherConnection struct {
-	// Total number of entries that match the query
-	TotalCount int `json:"totalCount"`
-	// Pagination entries returned for the current page
-	Edges []*VoucherEdge `json:"edges"`
-	// Pagination metadata
-	PageInfo *PageInfo `json:"pageInfo"`
-}
-
-// Pagination entry
-type VoucherEdge struct {
-	// Node instance
-	Node *Voucher `json:"node"`
-	// Pagination cursor
-	Cursor string `json:"cursor"`
 }
 
 type CompletionStatus string

@@ -9,13 +9,15 @@ package reader
 import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/gligneul/nonodo/internal/model"
+	nonodomodel "github.com/gligneul/nonodo/internal/model"
 	"github.com/gligneul/nonodo/internal/reader/graph"
+	"github.com/gligneul/nonodo/internal/reader/model"
 	"github.com/labstack/echo/v4"
 )
 
-func Register(e *echo.Echo, model *model.NonodoModel) {
-	resolver := graph.Resolver{Model: model}
+// Register the GraphQL reader API to echo.
+func Register(e *echo.Echo, nonodomodel *nonodomodel.NonodoModel) {
+	resolver := Resolver{model.NewModelWrapper(nonodomodel)}
 	config := graph.Config{Resolvers: &resolver}
 	schema := graph.NewExecutableSchema(config)
 	graphqlHandler := handler.NewDefaultServer(schema)
