@@ -17,6 +17,10 @@ type Voucher struct {
 	Payload     []byte
 }
 
+func (v Voucher) GetInputIndex() int {
+	return v.InputIndex
+}
+
 // Rollups notice type.
 type Notice struct {
 	Index      int
@@ -24,11 +28,19 @@ type Notice struct {
 	Payload    []byte
 }
 
+func (n Notice) GetInputIndex() int {
+	return n.InputIndex
+}
+
 // Rollups report type.
 type Report struct {
 	Index      int
 	InputIndex int
 	Payload    []byte
+}
+
+func (r Report) GetInputIndex() int {
+	return r.InputIndex
 }
 
 // Completion status for inputs.

@@ -615,6 +615,112 @@ func (s *ModelSuite) TestItFailsToGetReportFromExistingInput() {
 }
 
 //
+// GetNumInputs
+//
+
+func (s *ModelSuite) TestItGetsNumInputs() {
+	n := s.m.GetNumInputs(InputFilter{})
+	s.Equal(0, n)
+
+	for i := 0; i < s.n; i++ {
+		s.m.AddAdvanceInput(s.senders[i], s.payloads[i], s.blockNumbers[i], s.timestamps[i])
+	}
+
+	n = s.m.GetNumInputs(InputFilter{})
+	s.Equal(s.n, n)
+
+	indexGreaterThan := 0
+	indexLowerThan := 2
+	filter := InputFilter{
+		IndexGreaterThan: &indexGreaterThan,
+		IndexLowerThan:   &indexLowerThan,
+	}
+	n = s.m.GetNumInputs(filter)
+	s.Equal(1, n)
+}
+
+//
+// GetNumVouchers
+//
+
+func (s *ModelSuite) TestItGetsNumVouchers() {
+	n := s.m.GetNumVouchers(OutputFilter{})
+	s.Equal(0, n)
+
+	for i := 0; i < s.n; i++ {
+		s.m.AddAdvanceInput(s.senders[i], s.payloads[i], s.blockNumbers[i], s.timestamps[i])
+		s.m.FinishAndGetNext(true) // get
+		_, err := s.m.AddVoucher(s.senders[i], s.payloads[i])
+		s.Nil(err)
+		s.m.FinishAndGetNext(true) // finish
+	}
+
+	n = s.m.GetNumVouchers(OutputFilter{})
+	s.Equal(s.n, n)
+
+	inputIndex := 0
+	filter := OutputFilter{
+		InputIndex: &inputIndex,
+	}
+	n = s.m.GetNumVouchers(filter)
+	s.Equal(1, n)
+}
+
+//
+// GetNumNotices
+//
+
+func (s *ModelSuite) TestItGetsNumNotices() {
+	n := s.m.GetNumNotices(OutputFilter{})
+	s.Equal(0, n)
+
+	for i := 0; i < s.n; i++ {
+		s.m.AddAdvanceInput(s.senders[i], s.payloads[i], s.blockNumbers[i], s.timestamps[i])
+		s.m.FinishAndGetNext(true) // get
+		_, err := s.m.AddNotice(s.payloads[i])
+		s.Nil(err)
+		s.m.FinishAndGetNext(true) // finish
+	}
+
+	n = s.m.GetNumNotices(OutputFilter{})
+	s.Equal(s.n, n)
+
+	inputIndex := 0
+	filter := OutputFilter{
+		InputIndex: &inputIndex,
+	}
+	n = s.m.GetNumNotices(filter)
+	s.Equal(1, n)
+}
+
+//
+// GetNumReports
+//
+
+func (s *ModelSuite) TestItGetsNumReports() {
+	n := s.m.GetNumReports(OutputFilter{})
+	s.Equal(0, n)
+
+	for i := 0; i < s.n; i++ {
+		s.m.AddAdvanceInput(s.senders[i], s.payloads[i], s.blockNumbers[i], s.timestamps[i])
+		s.m.FinishAndGetNext(true) // get
+		err := s.m.AddReport(s.payloads[i])
+		s.Nil(err)
+		s.m.FinishAndGetNext(true) // finish
+	}
+
+	n = s.m.GetNumReports(OutputFilter{})
+	s.Equal(s.n, n)
+
+	inputIndex := 0
+	filter := OutputFilter{
+		InputIndex: &inputIndex,
+	}
+	n = s.m.GetNumReports(filter)
+	s.Equal(1, n)
+}
+
+//
 // GetInputs
 //
 
