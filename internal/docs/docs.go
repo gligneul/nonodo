@@ -1,6 +1,36 @@
-# NoNodo
+// Copyright (c) Gabriel de Quadros Ligneul
+// SPDX-License-Identifier: Apache-2.0 (see LICENSE)
 
+// This package contains the strings that are used to generate the nonodo docs.
+package docs
 
+import "bytes"
+
+// Use go generate to update the README file
+//go:generate go run ./gen-readme
+
+// Get the short string for the CLI command.
+func Short() string {
+	return short
+}
+
+// Get the long string for the CLI command.
+func Long() string {
+	return long[1:]
+}
+
+// Get the contents for the read-me.
+func Readme() []byte {
+	var buf bytes.Buffer
+	buf.WriteString("# NoNodo\n\n")
+	buf.WriteString(long)
+	buf.WriteString("\n\n")
+	return buf.Bytes()
+}
+
+const short = "Development Node for Cartesi Rollups"
+
+const long = `
 Nonodo is a development node for Cartesi Rollups.
 
 Nonodo was designed to work with applications running in the host machine instead of the Cartesi
@@ -36,5 +66,4 @@ HTTP address and port set by the --http-* flags.
 To start nonodo with a built-in echo application, use the --built-in-echo flag. This flag is useful
 when testing the application front-end without a working back-end.
 
-	nonodo --built-in-app
-
+	nonodo --built-in-app`

@@ -15,7 +15,7 @@ import (
 )
 
 // Poll interval when checking whether the command is ready.
-const CommandPollInterval = 100 * time.Millisecond
+const CommandPollInterval = 10 * time.Millisecond
 
 // This service is responsible for a shell command that runs endlessly.
 // The service polls the given port to know when it is ready.
