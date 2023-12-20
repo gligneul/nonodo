@@ -1,7 +1,5 @@
 TODO
 
-- Add GraphQL API
-  - https://github.com/yuuu/gqlgen-echo-sample
 - Add nonodo (integration) tests
   - Add input with accept
   - Add inspect input
@@ -11,7 +9,6 @@ TODO
 - Add binary release
   - https://github.com/marketplace/actions/go-release-binaries
 
-- Add -v
 - Add tests for inputter
 - Detect genesis block automatically
   - https://levelup.gitconnected.com/how-to-get-smart-contract-creation-block-number-7f22f8952be0

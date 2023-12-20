@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/carlmjohnson/versioninfo"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gligneul/nonodo/internal/nonodo"
@@ -15,10 +16,11 @@ import (
 )
 
 var Cmd = &cobra.Command{
-	Use:   "nonodo",
-	Short: "Development Node for Cartesi Rollups",
-	Long:  removeFirst(long),
-	Run:   run,
+	Use:     "nonodo",
+	Short:   "Development Node for Cartesi Rollups",
+	Long:    removeFirst(long),
+	Run:     run,
+	Version: versioninfo.Short(),
 }
 
 const long = `

@@ -4,6 +4,7 @@ go 1.21.1
 
 require (
 	github.com/99designs/gqlgen v0.17.41
+	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/cartesi/rollups-node v1.2.1-0.20231208193135-c22d1806e5b3
 	github.com/ethereum/go-ethereum v1.13.5
 	github.com/labstack/echo/v4 v4.11.3
