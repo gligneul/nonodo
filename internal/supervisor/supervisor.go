@@ -50,8 +50,6 @@ Loop:
 			err := service.Start(ctx, innerReady)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Printf("%v: %v exitted with error: %v", s, service, err)
-			} else {
-				log.Printf("%v: %v exitted with success", s, service)
 			}
 		}()
 		select {
