@@ -4,6 +4,7 @@ go 1.21.1
 
 require (
 	github.com/99designs/gqlgen v0.17.41
+	github.com/Khan/genqlient v0.6.0
 	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/cartesi/rollups-node v1.2.1-0.20231208193135-c22d1806e5b3
 	github.com/deepmap/oapi-codegen/v2 v2.0.0
@@ -19,6 +20,8 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
+	github.com/alexflint/go-arg v1.4.2 // indirect
+	github.com/alexflint/go-scalar v1.0.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/bits-and-blooms/bitset v1.7.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
