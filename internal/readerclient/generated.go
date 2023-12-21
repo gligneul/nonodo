@@ -21,6 +21,27 @@ const (
 	CompletionStatusPayloadLengthLimitExceeded CompletionStatus = "PAYLOAD_LENGTH_LIMIT_EXCEEDED"
 )
 
+// InputStatusInput includes the requested fields of the GraphQL type Input.
+// The GraphQL type's documentation follows.
+//
+// Request submitted to the application to advance its state
+type InputStatusInput struct {
+	// Status of the input
+	Status CompletionStatus `json:"status"`
+}
+
+// GetStatus returns InputStatusInput.Status, and is useful for accessing the field via an interface.
+func (v *InputStatusInput) GetStatus() CompletionStatus { return v.Status }
+
+// InputStatusResponse is returned by InputStatus on success.
+type InputStatusResponse struct {
+	// Get input based on its identifier
+	Input InputStatusInput `json:"input"`
+}
+
+// GetInput returns InputStatusResponse.Input, and is useful for accessing the field via an interface.
+func (v *InputStatusResponse) GetInput() InputStatusInput { return v.Input }
+
 // StateInputsInputConnection includes the requested fields of the GraphQL type InputConnection.
 // The GraphQL type's documentation follows.
 //
@@ -273,6 +294,50 @@ type StateResponse struct {
 
 // GetInputs returns StateResponse.Inputs, and is useful for accessing the field via an interface.
 func (v *StateResponse) GetInputs() StateInputsInputConnection { return v.Inputs }
+
+// __InputStatusInput is used internally by genqlient
+type __InputStatusInput struct {
+	Index int `json:"index"`
+}
+
+// GetIndex returns __InputStatusInput.Index, and is useful for accessing the field via an interface.
+func (v *__InputStatusInput) GetIndex() int { return v.Index }
+
+// The query or mutation executed by InputStatus.
+const InputStatus_Operation = `
+query InputStatus ($index: Int!) {
+	input(index: $index) {
+		status
+	}
+}
+`
+
+// Get the input status.
+func InputStatus(
+	ctx context.Context,
+	client graphql.Client,
+	index int,
+) (*InputStatusResponse, error) {
+	req := &graphql.Request{
+		OpName: "InputStatus",
+		Query:  InputStatus_Operation,
+		Variables: &__InputStatusInput{
+			Index: index,
+		},
+	}
+	var err error
+
+	var data InputStatusResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
 
 // The query or mutation executed by State.
 const State_Operation = `

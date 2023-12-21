@@ -40,7 +40,7 @@ func TestAnvilService(t *testing.T) {
 	}
 
 	// send input
-	err := AddInput(common.Hex2Bytes("deadbeef"))
+	err := AddInput(ctx, common.Hex2Bytes("deadbeef"))
 	assert.Nil(t, err)
 
 	// stop service

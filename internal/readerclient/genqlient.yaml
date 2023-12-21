@@ -6,3 +6,4 @@ bindings:
     type: string
 operations:
   - state.graphql
+  - input_status.graphql
