@@ -15,7 +15,6 @@ import (
 	"github.com/carlmjohnson/versioninfo"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/gligneul/nonodo/internal/docs"
 	"github.com/gligneul/nonodo/internal/nonodo"
 	"github.com/spf13/cobra"
 )
@@ -23,9 +22,8 @@ import (
 var startTime = time.Now()
 
 var cmd = &cobra.Command{
-	Use:     "nonodo",
-	Short:   docs.Short(),
-	Long:    docs.Long(),
+	Use:     "nonodo [flags] [-- application [args]...]",
+	Short:   "Nonodo is a development node for Cartesi Rollups",
 	Run:     run,
 	Version: versioninfo.Short(),
 }
@@ -50,11 +48,12 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) {
-	ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
-
 	checkEthAddress(cmd, "address-input-box")
 	checkEthAddress(cmd, "address-application")
+	opts.ApplicationArgs = args
+
+	ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	ready := make(chan struct{}, 1)
 	go func() {
@@ -66,10 +65,10 @@ func run(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	service := nonodo.NewService(opts)
-	if err := service.Start(ctx, ready); err != nil {
-		log.Print(err)
-	}
+	service, err := nonodo.NewService(opts)
+	cobra.CheckErr(err)
+	err = service.Start(ctx, ready)
+	cobra.CheckErr(err)
 }
 
 func main() {
