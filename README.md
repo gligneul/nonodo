@@ -91,5 +91,5 @@ This option is useful when testing the application front-end without a working b
 To start NoNodo with the built-in echo application, use the `--built-in-echo` flag. 
 
 ```sh
-nonodo --built-in-app
+nonodo --built-in-echo
 ```
