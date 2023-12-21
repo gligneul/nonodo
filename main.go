@@ -33,8 +33,6 @@ var cmd = &cobra.Command{
 var opts = nonodo.NewNonodoOpts()
 
 func init() {
-	cmd.Flags().IntVar(&opts.AnvilBlockTime, "anvil-block-time", opts.AnvilBlockTime,
-		"Time in seconds between Anvil blocks")
 	cmd.Flags().IntVar(&opts.AnvilPort, "anvil-port", opts.AnvilPort,
 		"HTTP port used by Anvil")
 	cmd.Flags().BoolVar(&opts.AnvilVerbose, "anvil-verbose", opts.AnvilVerbose,

@@ -18,9 +18,8 @@ const AnvilDefaultPort = 8545
 
 // Start the anvil process in the host machine.
 type AnvilService struct {
-	Port      int
-	BlockTime int
-	Verbose   bool
+	Port    int
+	Verbose bool
 }
 
 func (s AnvilService) String() string {
@@ -51,7 +50,6 @@ func (s AnvilService) Start(ctx context.Context, ready chan<- struct{}) error {
 	// start command
 	args := []string{
 		"--port", fmt.Sprint(s.Port),
-		"--block-time", fmt.Sprint(s.BlockTime),
 		"--load-state", stateFile,
 	}
 	if !s.Verbose {

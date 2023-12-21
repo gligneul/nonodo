@@ -19,9 +19,8 @@ func TestAnvilService(t *testing.T) {
 	defer timeoutCancel()
 
 	command := AnvilService{
-		Port:      AnvilDefaultPort,
-		BlockTime: 1,
-		Verbose:   false,
+		Port:    AnvilDefaultPort,
+		Verbose: false,
 	}
 
 	// start service in goroutine

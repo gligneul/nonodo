@@ -23,7 +23,6 @@ import (
 // Options to nonodo.
 type NonodoOpts struct {
 	AnvilPort          int
-	AnvilBlockTime     int
 	AnvilVerbose       bool
 	BuiltInEcho        bool
 	HttpAddress        string
@@ -36,7 +35,6 @@ type NonodoOpts struct {
 func NewNonodoOpts() NonodoOpts {
 	return NonodoOpts{
 		AnvilPort:          foundry.AnvilDefaultPort,
-		AnvilBlockTime:     1,
 		AnvilVerbose:       false,
 		BuiltInEcho:        false,
 		HttpAddress:        "127.0.0.1",
@@ -58,9 +56,8 @@ func NewService(opts NonodoOpts) supervisor.Service {
 
 	var services []supervisor.Service
 	services = append(services, foundry.AnvilService{
-		Port:      opts.AnvilPort,
-		BlockTime: opts.AnvilBlockTime,
-		Verbose:   opts.AnvilVerbose,
+		Port:    opts.AnvilPort,
+		Verbose: opts.AnvilVerbose,
 	})
 	services = append(services, inputter.InputterService{
 		Model:              model,
