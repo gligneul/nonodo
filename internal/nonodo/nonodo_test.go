@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gligneul/nonodo/internal/foundry"
+	"github.com/gligneul/nonodo/internal/inspect"
 	"github.com/gligneul/nonodo/internal/readerclient"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,6 +27,7 @@ type NonodoSuite struct {
 	serviceCancel context.CancelFunc
 	serviceResult chan error
 	graphqlClient graphql.Client
+	inspectClient *inspect.ClientWithResponses
 }
 
 func (s *NonodoSuite) SetupTest() {
@@ -51,8 +54,13 @@ func (s *NonodoSuite) SetupTest() {
 	case <-ready:
 	}
 
-	endpoint := fmt.Sprintf("http://%v:%v/graphql", opts.HttpAddress, opts.HttpPort)
-	s.graphqlClient = graphql.NewClient(endpoint, nil)
+	graphqlEndpoint := fmt.Sprintf("http://%v:%v/graphql", opts.HttpAddress, opts.HttpPort)
+	s.graphqlClient = graphql.NewClient(graphqlEndpoint, nil)
+
+	var err error
+	inspectEndpoint := fmt.Sprintf("http://%v:%v/inspect", opts.HttpAddress, opts.HttpPort)
+	s.inspectClient, err = inspect.NewClientWithResponses(inspectEndpoint)
+	s.Nil(err)
 }
 
 func (s *NonodoSuite) TearDownTest() {
@@ -87,6 +95,14 @@ func (s *NonodoSuite) waitForAdvanceInput(inputIndex int) error {
 	return fmt.Errorf("input never got ready")
 }
 
+// Create a random payload to use in the tests
+func (s *NonodoSuite) makePayload() []byte {
+	payload := make([]byte, 32)
+	_, err := rand.Read(payload)
+	s.Require().Nil(err)
+	return payload
+}
+
 // Decode the hex string into bytes.
 func (s *NonodoSuite) decodeHex(value string) []byte {
 	bytes, err := hexutil.Decode(value)
@@ -94,16 +110,13 @@ func (s *NonodoSuite) decodeHex(value string) []byte {
 	return bytes
 }
 
-func (s *NonodoSuite) TestItProcessesInputs() {
-	s.T().Log("sending inputs")
+func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
+	s.T().Log("sending advance inputs")
 	const n = 3
 	payloads := make([][]byte, n)
 	for i := 0; i < n; i++ {
-		payloads[i] = make([]byte, 32)
-		_, err := rand.Read(payloads[i])
-		s.Require().Nil(err)
-
-		err = foundry.AddInput(s.ctx, payloads[i])
+		payloads[i] = s.makePayload()
+		err := foundry.AddInput(s.ctx, payloads[i])
 		s.Require().Nil(err)
 	}
 
@@ -125,6 +138,22 @@ func (s *NonodoSuite) TestItProcessesInputs() {
 		s.Equal(foundry.SenderAddress[:], s.decodeHex(voucher.Destination))
 		s.Equal(payloads[i], s.decodeHex(input.Notices.Edges[0].Node.Payload))
 		s.Equal(payloads[i], s.decodeHex(input.Reports.Edges[0].Node.Payload))
+	}
+}
+
+func (s *NonodoSuite) TestItProcessesInspectInputs() {
+	s.T().Log("sending inspect inputs")
+	const n = 3
+	for i := 0; i < n; i++ {
+		payload := s.makePayload()
+		response, err := s.inspectClient.InspectWithResponse(s.ctx, hexutil.Encode(payload))
+		s.Nil(err)
+		s.Equal(http.StatusOK, response.StatusCode())
+		s.Equal("0x", response.JSON200.ExceptionPayload)
+		s.Equal(0, response.JSON200.ProcessedInputCount)
+		s.Len(response.JSON200.Reports, 1)
+		s.Equal(payload, s.decodeHex(response.JSON200.Reports[0].Payload))
+		s.Equal(inspect.Accepted, response.JSON200.Status)
 	}
 }
 
