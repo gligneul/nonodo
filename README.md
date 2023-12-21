@@ -1,6 +1,6 @@
 # NoNodo
 
-![Build](https://github.com/gligneul/eggroll/actions/workflows/build.yml/badge.svg)
+![Build](https://github.com/gligneul/nonodo/actions/workflows/build.yaml/badge.svg)
 
 NoNodo is a development node for the Cartesi Rollups that was designed to work with applications running in the host machine instead of the Cartesi machine.
 So, the application developer doesn't need to be concerned with compiling their application to RISC-V.
