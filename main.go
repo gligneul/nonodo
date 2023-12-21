@@ -65,9 +65,9 @@ func run(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	service, err := nonodo.NewService(opts)
+	w, err := nonodo.NewNonodoWorker(opts)
 	cobra.CheckErr(err)
-	err = service.Start(ctx, ready)
+	err = w.Start(ctx, ready)
 	cobra.CheckErr(err)
 }
 

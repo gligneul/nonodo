@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// Nonodo model shared among the internal services.
+// Nonodo model shared among the internal workers.
 // The model store inputs as pointers because these pointers are shared with the rollup state.
 type NonodoModel struct {
 	mutex    sync.Mutex

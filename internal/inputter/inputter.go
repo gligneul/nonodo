@@ -23,36 +23,36 @@ type Model interface {
 	)
 }
 
-// The inputterService reads inputs from Ethereum and puts them in the model.
-type InputterService struct {
+// This worker reads inputs from Ethereum and puts them in the model.
+type InputterWorker struct {
 	Model              Model
 	Provider           string
 	InputBoxAddress    common.Address
 	ApplicationAddress common.Address
 }
 
-func (s InputterService) String() string {
+func (w InputterWorker) String() string {
 	return "inputter"
 }
 
-func (s InputterService) Start(ctx context.Context, ready chan<- struct{}) error {
-	client, err := ethclient.DialContext(ctx, s.Provider)
+func (w InputterWorker) Start(ctx context.Context, ready chan<- struct{}) error {
+	client, err := ethclient.DialContext(ctx, w.Provider)
 	if err != nil {
 		return err
 	}
 
-	inputBox, err := contracts.NewInputBox(s.InputBoxAddress, client)
+	inputBox, err := contracts.NewInputBox(w.InputBoxAddress, client)
 	if err != nil {
 		return err
 	}
 
 	logs := make(chan *contracts.InputBoxInputAdded)
-	startingBlock := findGenesis(s.InputBoxAddress)
+	startingBlock := findGenesis(w.InputBoxAddress)
 	opts := bind.WatchOpts{
 		Start:   &startingBlock,
 		Context: ctx,
 	}
-	filter := []common.Address{s.ApplicationAddress}
+	filter := []common.Address{w.ApplicationAddress}
 	sub, err := inputBox.WatchInputAdded(&opts, logs, filter, nil)
 	if err != nil {
 		return fmt.Errorf("failed to watch inputs: %w", err)
@@ -70,7 +70,7 @@ func (s InputterService) Start(ctx context.Context, ready chan<- struct{}) error
 			if err != nil {
 				return fmt.Errorf("failed to get tx header: %w", err)
 			}
-			s.Model.AddAdvanceInput(
+			w.Model.AddAdvanceInput(
 				log.Sender,
 				log.Input,
 				log.Raw.BlockNumber,

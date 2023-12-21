@@ -1,7 +1,8 @@
 // Copyright (c) Gabriel de Quadros Ligneul
 // SPDX-License-Identifier: Apache-2.0 (see LICENSE)
 
-package nonodo
+// This pkg is a echo application that uses the Cartesi rollup HTTP API.
+package echoapp
 
 import (
 	"context"
@@ -12,19 +13,18 @@ import (
 	"github.com/gligneul/nonodo/internal/rollup"
 )
 
-// The echoService uses the rollup API to implement an echo application.
-// This services uses the API rather than talking directly to the model so it can be used in
-// integration tests.
-type echoService struct {
-	rollupEndpoint string
+// This worker uses the rollup API to implement an echo application.
+// It uses the API rather than talking directly to the model so it can be used in integration tests.
+type EchoAppWorker struct {
+	RollupEndpoint string
 }
 
-func (s echoService) String() string {
+func (w EchoAppWorker) String() string {
 	return "echo"
 }
 
-func (s echoService) Start(ctx context.Context, ready chan<- struct{}) error {
-	client, err := rollup.NewClientWithResponses(s.rollupEndpoint)
+func (w EchoAppWorker) Start(ctx context.Context, ready chan<- struct{}) error {
+	client, err := rollup.NewClientWithResponses(w.RollupEndpoint)
 	if err != nil {
 		return fmt.Errorf("echo: %w", err)
 	}

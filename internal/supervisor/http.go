@@ -11,35 +11,35 @@ import (
 	"net/http"
 )
 
-// The HTTP service starts a HTTP server.
-type HttpService struct {
+// The HTTP worker starts and manage an HTTP server.
+type HttpWorker struct {
 	Address string
 	Handler http.Handler
 }
 
-func (s HttpService) String() string {
+func (w HttpWorker) String() string {
 	return "http"
 }
 
-func (s HttpService) Start(ctx context.Context, ready chan<- struct{}) error {
-	// create server
+func (w HttpWorker) Start(ctx context.Context, ready chan<- struct{}) error {
+	// create the server
 	server := http.Server{
-		Addr:    s.Address,
-		Handler: s.Handler,
+		Addr:    w.Address,
+		Handler: w.Handler,
 	}
-	ln, err := net.Listen("tcp", s.Address)
+	ln, err := net.Listen("tcp", w.Address)
 	if err != nil {
 		return err
 	}
-	log.Printf("%s: listening on %v", s, ln.Addr())
+	log.Printf("http: listening on %v", ln.Addr())
 	ready <- struct{}{}
 
-	// create goroutine to shutdown server
+	// create the goroutine to shutdown server
 	go func() {
 		<-ctx.Done()
 		err := server.Shutdown(ctx)
 		if err != nil && !errors.Is(err, context.Canceled) {
-			log.Printf("%v: error shutting down http server: %v", s, err)
+			log.Printf("http: error shutting down http server: %v", err)
 		}
 	}()
 

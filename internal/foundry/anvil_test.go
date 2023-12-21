@@ -14,25 +14,25 @@ import (
 
 const testTimeout = 5 * time.Second
 
-func TestAnvilService(t *testing.T) {
+func TestAnvilWorker(t *testing.T) {
 	ctx, timeoutCancel := context.WithTimeout(context.Background(), testTimeout)
 	defer timeoutCancel()
 
-	command := AnvilService{
+	w := AnvilWorker{
 		Port:    AnvilDefaultPort,
 		Verbose: false,
 	}
 
-	// start service in goroutine
-	serviceCtx, serviceCancel := context.WithCancel(ctx)
-	defer serviceCancel()
+	// start worker in goroutine
+	workerCtx, workerCancel := context.WithCancel(ctx)
+	defer workerCancel()
 	ready := make(chan struct{})
 	result := make(chan error)
 	go func() {
-		result <- command.Start(serviceCtx, ready)
+		result <- w.Start(workerCtx, ready)
 	}()
 
-	// wait until service is ready
+	// wait until worker is ready
 	select {
 	case <-ready:
 	case <-ctx.Done():
@@ -43,8 +43,8 @@ func TestAnvilService(t *testing.T) {
 	err := AddInput(ctx, common.Hex2Bytes("deadbeef"))
 	assert.Nil(t, err)
 
-	// stop service
-	serviceCancel()
+	// stop worker
+	workerCancel()
 	select {
 	case err := <-result:
 		assert.Equal(t, context.Canceled, err)

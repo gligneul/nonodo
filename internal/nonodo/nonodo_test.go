@@ -17,62 +17,160 @@ import (
 	"github.com/gligneul/nonodo/internal/foundry"
 	"github.com/gligneul/nonodo/internal/inspect"
 	"github.com/gligneul/nonodo/internal/readerclient"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
+
+const testTimeout = 5 * time.Second
 
 type NonodoSuite struct {
 	suite.Suite
 	ctx           context.Context
 	timeoutCancel context.CancelFunc
-	serviceCancel context.CancelFunc
-	serviceResult chan error
+	workerCancel  context.CancelFunc
+	workerResult  chan error
 	graphqlClient graphql.Client
 	inspectClient *inspect.ClientWithResponses
 }
 
-func (s *NonodoSuite) SetupTest() {
-	const testTimeout = 5 * time.Second
-	s.ctx, s.timeoutCancel = context.WithTimeout(context.Background(), testTimeout)
-	s.serviceResult = make(chan error)
+//
+// Test Cases
+//
 
-	var serviceCtx context.Context
-	serviceCtx, s.serviceCancel = context.WithCancel(s.ctx)
-
+func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
 	opts := NewNonodoOpts()
 	opts.BuiltInEcho = true
-	service := NewService(opts)
+	s.SetupTest(opts)
+
+	s.T().Log("sending advance inputs")
+	const n = 3
+	payloads := make([][]byte, n)
+	for i := 0; i < n; i++ {
+		payloads[i] = s.makePayload()
+		err := foundry.AddInput(s.ctx, payloads[i])
+		s.Require().Nil(err)
+	}
+
+	s.T().Log("waiting until last input is ready")
+	err := s.waitForAdvanceInput(n - 1)
+	s.Require().Nil(err)
+
+	s.T().Log("verifying node state")
+	response, err := readerclient.State(s.ctx, s.graphqlClient)
+	s.Require().Nil(err)
+	for i := 0; i < n; i++ {
+		input := response.Inputs.Edges[i].Node
+		s.Equal(i, input.Index)
+		s.Equal(payloads[i], s.decodeHex(input.Payload))
+		s.Equal(payloads[i], s.decodeHex(input.Payload))
+		s.Equal(foundry.SenderAddress[:], s.decodeHex(input.MsgSender))
+		voucher := input.Vouchers.Edges[0].Node
+		s.Equal(payloads[i], s.decodeHex(voucher.Payload))
+		s.Equal(foundry.SenderAddress[:], s.decodeHex(voucher.Destination))
+		s.Equal(payloads[i], s.decodeHex(input.Notices.Edges[0].Node.Payload))
+		s.Equal(payloads[i], s.decodeHex(input.Reports.Edges[0].Node.Payload))
+	}
+}
+
+func (s *NonodoSuite) TestItProcessesInspectInputs() {
+	opts := NewNonodoOpts()
+	opts.BuiltInEcho = true
+	s.SetupTest(opts)
+
+	s.T().Log("sending inspect inputs")
+	const n = 3
+	for i := 0; i < n; i++ {
+		payload := s.makePayload()
+		response, err := s.inspectClient.InspectWithResponse(s.ctx, hexutil.Encode(payload))
+		s.Nil(err)
+		s.Equal(http.StatusOK, response.StatusCode())
+		s.Equal("0x", response.JSON200.ExceptionPayload)
+		s.Equal(0, response.JSON200.ProcessedInputCount)
+		s.Len(response.JSON200.Reports, 1)
+		s.Equal(payload, s.decodeHex(response.JSON200.Reports[0].Payload))
+		s.Equal(inspect.Accepted, response.JSON200.Status)
+	}
+}
+
+func (s *NonodoSuite) TestItWorksWithExternalApplication() {
+	opts := NewNonodoOpts()
+	opts.ApplicationArgs = []string{
+		"go",
+		"run",
+		"github.com/gligneul/nonodo/internal/echoapp/echoapp",
+		"--endpoint",
+		fmt.Sprintf("http://%v:%v/rollup", opts.HttpAddress, opts.HttpPort),
+	}
+	s.SetupTest(opts)
+
+	s.T().Log("sending inspect to external application")
+	payload := s.makePayload()
+	response, err := s.inspectClient.InspectWithResponse(s.ctx, hexutil.Encode(payload))
+	s.Require().Nil(err)
+	s.Require().Equal(http.StatusOK, response.StatusCode())
+	s.Require().Equal(payload, s.decodeHex(response.JSON200.Reports[0].Payload))
+}
+
+func TestItFailsToStartWhenThereIsApplicationConflict(t *testing.T) {
+	// This test doesn't use the suite because the worker fails imediatelly.
+	opts := NewNonodoOpts()
+	opts.BuiltInEcho = true
+	opts.ApplicationArgs = []string{"test"}
+	_, err := NewNonodoWorker(opts)
+	assert.ErrorIs(t, ApplicationConflictErr, err)
+}
+
+//
+// Setup and tear down
+//
+
+// Setup the nonodo suite.
+// This method requires the nonodo options, so each test must call it explicitly.
+func (s *NonodoSuite) SetupTest(opts NonodoOpts) {
+	s.ctx, s.timeoutCancel = context.WithTimeout(context.Background(), testTimeout)
+	s.workerResult = make(chan error)
+
+	var workerCtx context.Context
+	workerCtx, s.workerCancel = context.WithCancel(s.ctx)
+
+	w, err := NewNonodoWorker(opts)
+	s.Nil(err)
 
 	ready := make(chan struct{})
 	go func() {
-		s.serviceResult <- service.Start(serviceCtx, ready)
+		s.workerResult <- w.Start(workerCtx, ready)
 	}()
 	select {
 	case <-s.ctx.Done():
-		s.Fail("context error: %v", s.ctx.Err())
-	case err := <-s.serviceResult:
-		s.Fail("service exited before being ready: %v", err)
+		s.Fail("context error", s.ctx.Err())
+	case err := <-s.workerResult:
+		s.Fail("worker exited before being ready", err)
 	case <-ready:
+		s.T().Log("nonodo ready")
 	}
 
 	graphqlEndpoint := fmt.Sprintf("http://%v:%v/graphql", opts.HttpAddress, opts.HttpPort)
 	s.graphqlClient = graphql.NewClient(graphqlEndpoint, nil)
 
-	var err error
 	inspectEndpoint := fmt.Sprintf("http://%v:%v/inspect", opts.HttpAddress, opts.HttpPort)
 	s.inspectClient, err = inspect.NewClientWithResponses(inspectEndpoint)
 	s.Nil(err)
 }
 
 func (s *NonodoSuite) TearDownTest() {
-	s.serviceCancel()
+	s.workerCancel()
 	select {
 	case <-s.ctx.Done():
-		s.Fail("context error: %v", s.ctx.Err())
-	case err := <-s.serviceResult:
+		s.Fail("context error", s.ctx.Err())
+	case err := <-s.workerResult:
 		s.Nil(err)
 	}
 	s.timeoutCancel()
 }
+
+//
+// Helper functions
+//
 
 // Wait for the given input to be ready.
 func (s *NonodoSuite) waitForAdvanceInput(inputIndex int) error {
@@ -108,53 +206,6 @@ func (s *NonodoSuite) decodeHex(value string) []byte {
 	bytes, err := hexutil.Decode(value)
 	s.Require().Nil(err)
 	return bytes
-}
-
-func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
-	s.T().Log("sending advance inputs")
-	const n = 3
-	payloads := make([][]byte, n)
-	for i := 0; i < n; i++ {
-		payloads[i] = s.makePayload()
-		err := foundry.AddInput(s.ctx, payloads[i])
-		s.Require().Nil(err)
-	}
-
-	s.T().Log("waiting until last input is ready")
-	err := s.waitForAdvanceInput(n - 1)
-	s.Require().Nil(err)
-
-	s.T().Log("verifying node state")
-	response, err := readerclient.State(s.ctx, s.graphqlClient)
-	s.Require().Nil(err)
-	for i := 0; i < n; i++ {
-		input := response.Inputs.Edges[i].Node
-		s.Equal(i, input.Index)
-		s.Equal(payloads[i], s.decodeHex(input.Payload))
-		s.Equal(payloads[i], s.decodeHex(input.Payload))
-		s.Equal(foundry.SenderAddress[:], s.decodeHex(input.MsgSender))
-		voucher := input.Vouchers.Edges[0].Node
-		s.Equal(payloads[i], s.decodeHex(voucher.Payload))
-		s.Equal(foundry.SenderAddress[:], s.decodeHex(voucher.Destination))
-		s.Equal(payloads[i], s.decodeHex(input.Notices.Edges[0].Node.Payload))
-		s.Equal(payloads[i], s.decodeHex(input.Reports.Edges[0].Node.Payload))
-	}
-}
-
-func (s *NonodoSuite) TestItProcessesInspectInputs() {
-	s.T().Log("sending inspect inputs")
-	const n = 3
-	for i := 0; i < n; i++ {
-		payload := s.makePayload()
-		response, err := s.inspectClient.InspectWithResponse(s.ctx, hexutil.Encode(payload))
-		s.Nil(err)
-		s.Equal(http.StatusOK, response.StatusCode())
-		s.Equal("0x", response.JSON200.ExceptionPayload)
-		s.Equal(0, response.JSON200.ProcessedInputCount)
-		s.Len(response.JSON200.Reports, 1)
-		s.Equal(payload, s.decodeHex(response.JSON200.Reports[0].Payload))
-		s.Equal(inspect.Accepted, response.JSON200.Status)
-	}
 }
 
 func TestNonodoSuite(t *testing.T) {

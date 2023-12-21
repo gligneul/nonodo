@@ -4,74 +4,70 @@
 package supervisor
 
 import (
+	"bytes"
 	"context"
-	"fmt"
+	"errors"
+	"io"
 	"log"
-	"net"
 	"os/exec"
-	"strings"
 	"syscall"
-	"time"
 )
 
-// Poll interval when checking whether the command is ready.
-const CommandPollInterval = 10 * time.Millisecond
-
-// This service is responsible for a shell command that runs endlessly.
-// The service polls the given port to know when it is ready.
-type CommandService struct {
-	Name string
-	Args []string
-	Env  []string
-	Port int
+// This worker is responsible for a shell command that runs endlessly.
+type CommandWorker struct {
+	Name    string
+	Command string
+	Args    []string
+	Env     []string
 }
 
-func (s CommandService) String() string {
-	return s.Name
+func (w CommandWorker) String() string {
+	return w.Name
 }
 
-func (s CommandService) Start(ctx context.Context, ready chan<- struct{}) error {
-	cmd := exec.CommandContext(ctx, s.Name, s.Args...)
-	cmd.Env = s.Env
-	cmd.Stderr = commandLogger{s.Name}
-	cmd.Stdout = commandLogger{s.Name}
+func (w CommandWorker) Start(ctx context.Context, ready chan<- struct{}) error {
+	cmd := exec.CommandContext(ctx, w.Command, w.Args...)
+	cmd.Env = w.Env
+	cmd.Stderr = &commandLogger{name: w.Name}
+	cmd.Stdout = &commandLogger{name: w.Name}
+	// Use setpgid to create a process group, so we can send the terminate signal to the
+	// processes and all of its children. This only works on unix systems.
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error {
-		err := cmd.Process.Signal(syscall.SIGTERM)
+		// Send the terminate signal to the process group by passing the negative pid.
+		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
 		if err != nil {
-			log.Printf("failed to send SIGTERM to %v: %v", s.Name, err)
+			log.Printf("%v: failed to send SIGTERM: %v", w, err)
 		}
 		return err
 	}
-	go s.pollTcp(ctx, ready)
-	return cmd.Run()
-}
-
-// Polls the command tcp port until it is ready.
-func (s CommandService) pollTcp(ctx context.Context, ready chan<- struct{}) {
-	for {
-		conn, err := net.Dial("tcp", fmt.Sprintf("0.0.0.0:%v", s.Port))
-		if err == nil {
-			conn.Close()
-			ready <- struct{}{}
-			return
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(CommandPollInterval):
-		}
+	ready <- struct{}{}
+	err := cmd.Run()
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
+	return err
 }
 
 type commandLogger struct {
-	Name string
+	name   string
+	buffer bytes.Buffer
 }
 
 // Log the command output.
-func (s commandLogger) Write(data []byte) (int, error) {
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		log.Printf("%v: %v", s.Name, line)
+func (w *commandLogger) Write(data []byte) (int, error) {
+	_, err := w.buffer.Write(data)
+	if err != nil {
+		return 0, err
+	}
+	for {
+		line, err := w.buffer.ReadBytes('\n')
+		if errors.Is(err, io.EOF) {
+			break
+		} else if err != nil {
+			return 0, err
+		}
+		log.Printf("%v: %v", w.name, string(line))
 	}
 	return len(data), nil
 }

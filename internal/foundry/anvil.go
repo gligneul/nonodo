@@ -17,16 +17,16 @@ import (
 const AnvilDefaultPort = 8545
 
 // Start the anvil process in the host machine.
-type AnvilService struct {
+type AnvilWorker struct {
 	Port    int
 	Verbose bool
 }
 
-func (s AnvilService) String() string {
+func (s AnvilWorker) String() string {
 	return "anvil"
 }
 
-func (s AnvilService) Start(ctx context.Context, ready chan<- struct{}) error {
+func (s AnvilWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 	// create temp dir
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -47,7 +47,7 @@ func (s AnvilService) Start(ctx context.Context, ready chan<- struct{}) error {
 		return fmt.Errorf("anvil: failed to write state file: %w", err)
 	}
 
-	// start command
+	// start server worker
 	args := []string{
 		"--port", fmt.Sprint(s.Port),
 		"--load-state", stateFile,
@@ -55,10 +55,10 @@ func (s AnvilService) Start(ctx context.Context, ready chan<- struct{}) error {
 	if !s.Verbose {
 		args = append(args, "--silent")
 	}
-	command := supervisor.CommandService{
-		Name: "anvil",
-		Args: args,
-		Port: s.Port,
-	}
-	return command.Start(ctx, ready)
+	var server supervisor.ServerWorker
+	server.Name = "anvil"
+	server.Command = "anvil"
+	server.Args = args
+	server.Port = s.Port
+	return server.Start(ctx, ready)
 }

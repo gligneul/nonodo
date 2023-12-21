@@ -6,9 +6,11 @@
 package nonodo
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gligneul/nonodo/internal/echoapp"
 	"github.com/gligneul/nonodo/internal/foundry"
 	"github.com/gligneul/nonodo/internal/inputter"
 	"github.com/gligneul/nonodo/internal/inspect"
@@ -20,6 +22,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+var ApplicationConflictErr = errors.New("can't use built-in echo with custom application")
+
 // Options to nonodo.
 type NonodoOpts struct {
 	AnvilPort          int
@@ -29,6 +33,7 @@ type NonodoOpts struct {
 	HttpPort           int
 	InputBoxAddress    string
 	ApplicationAddress string
+	ApplicationArgs    []string
 }
 
 // Create the options struct with default values.
@@ -41,11 +46,18 @@ func NewNonodoOpts() NonodoOpts {
 		HttpPort:           8080,
 		InputBoxAddress:    foundry.InputBoxAddress,
 		ApplicationAddress: foundry.ApplicationAddress,
+		ApplicationArgs:    nil,
 	}
 }
 
 // Start nonodo.
-func NewService(opts NonodoOpts) supervisor.Service {
+func NewNonodoWorker(opts NonodoOpts) (w supervisor.SupervisorWorker, err error) {
+	if opts.BuiltInEcho && len(opts.ApplicationArgs) > 0 {
+		return w, ApplicationConflictErr
+	}
+
+	w.Name = "nonodo"
+
 	model := model.NewNonodoModel()
 	e := echo.New()
 	e.Use(middleware.CORS())
@@ -54,29 +66,31 @@ func NewService(opts NonodoOpts) supervisor.Service {
 	inspect.Register(e, model)
 	reader.Register(e, model)
 
-	var services []supervisor.Service
-	services = append(services, foundry.AnvilService{
+	w.Workers = append(w.Workers, foundry.AnvilWorker{
 		Port:    opts.AnvilPort,
 		Verbose: opts.AnvilVerbose,
 	})
-	services = append(services, inputter.InputterService{
+	w.Workers = append(w.Workers, inputter.InputterWorker{
 		Model:              model,
 		Provider:           fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort),
 		InputBoxAddress:    common.HexToAddress(opts.InputBoxAddress),
 		ApplicationAddress: common.HexToAddress(opts.ApplicationAddress),
 	})
-	services = append(services, supervisor.HttpService{
+	w.Workers = append(w.Workers, supervisor.HttpWorker{
 		Address: fmt.Sprintf("%v:%v", opts.HttpAddress, opts.HttpPort),
 		Handler: e,
 	})
-	if opts.BuiltInEcho {
-		services = append(services, echoService{
-			rollupEndpoint: fmt.Sprintf("http://127.0.0.1:%v/rollup", opts.HttpPort),
+	if len(opts.ApplicationArgs) > 0 {
+		w.Workers = append(w.Workers, supervisor.CommandWorker{
+			Name:    "app",
+			Command: opts.ApplicationArgs[0],
+			Args:    opts.ApplicationArgs[1:],
+		})
+	} else if opts.BuiltInEcho {
+		w.Workers = append(w.Workers, echoapp.EchoAppWorker{
+			RollupEndpoint: fmt.Sprintf("http://127.0.0.1:%v/rollup", opts.HttpPort),
 		})
 	}
 
-	return supervisor.SupervisorService{
-		Name:     "nonodo",
-		Services: services,
-	}
+	return w, nil
 }
