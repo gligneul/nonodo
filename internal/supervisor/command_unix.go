@@ -1,13 +1,12 @@
 // Copyright (c) Gabriel de Quadros Ligneul
 // SPDX-License-Identifier: Apache-2.0 (see LICENSE)
 
+//go:build !windows
+
 package supervisor
 
 import (
-	"bytes"
 	"context"
-	"errors"
-	"io"
 	"log"
 	"os/exec"
 	"syscall"
@@ -47,27 +46,4 @@ func (w CommandWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 		return ctx.Err()
 	}
 	return err
-}
-
-type commandLogger struct {
-	name   string
-	buffer bytes.Buffer
-}
-
-// Log the command output.
-func (w *commandLogger) Write(data []byte) (int, error) {
-	_, err := w.buffer.Write(data)
-	if err != nil {
-		return 0, err
-	}
-	for {
-		line, err := w.buffer.ReadBytes('\n')
-		if errors.Is(err, io.EOF) {
-			break
-		} else if err != nil {
-			return 0, err
-		}
-		log.Printf("%v: %v", w.name, string(line))
-	}
-	return len(data), nil
 }
