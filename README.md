@@ -20,7 +20,7 @@ NoNodo is a valuable development workflow help, but there are some caveats the d
 NoNodo uses the Anvil as the underlying Ethereum node.
 To install Anvil, read the instructions on the [Foundry book](https://book.getfoundry.sh/getting-started/installation).
 
-### Installing with Go
+### Installing from source
 
 Installing NoNodo using the [`go install`](https://go.dev/ref/mod#go-install) command is possible.
 To use this command, install Go following the instructions on the [Go website](https://go.dev/doc/install).
@@ -30,8 +30,10 @@ Then, run the command below to install NoNodo.
 go install github.com/gligneul/nonodo@latest
 ```
 
-Make sure you add the Go path to your system path.
-The snippet below exemplifies that.
+The command above installs NoNodo into the `bin` directory inside the directory defined by the `GOPATH` environment variable.
+If you don't set the `GOPATH` variable, the default install location is `$HOME/go/bin`.
+So, to call the `nonodo` command directly, you should add it to the `PATH` variable.
+The command below exemplifies that.
 
 ```sh
 export PATH="$HOME/go/bin:$PATH"
@@ -88,7 +90,7 @@ nonodo -- ./my-app
 NoNodo has a built-in echo application that generates a voucher, a notice, and a report for each advance input.
 The echo also generates a report for each inspect input.
 This option is useful when testing the application front-end without a working back-end.
-To start NoNodo with the built-in echo application, use the `--built-in-echo` flag. 
+To start NoNodo with the built-in echo application, use the `--built-in-echo` flag.
 
 ```sh
 nonodo --built-in-echo
