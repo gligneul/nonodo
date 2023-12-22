@@ -1,6 +1,7 @@
 # NoNodo
 
 ![Build](https://github.com/gligneul/nonodo/actions/workflows/build.yaml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gligneul/nonodo)](https://goreportcard.com/report/github.com/gligneul/nonodo)
 
 NoNodo is a development node for the [Cartesi Rollups](https://docs.cartesi.io/cartesi-rollups/) that was designed to work with applications running in the host machine instead of the Cartesi machine.
 So, the application developer doesn't need to be concerned with compiling their application to RISC-V.
