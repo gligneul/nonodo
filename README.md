@@ -122,3 +122,12 @@ For instance, the command below sends an inspect input with payload `hi` to NoNo
 ```
 curl -X POST -d "hi" http://127.0.0.1:8080/inspect/
 ```
+
+## Compatibility
+
+NoNodo is compatible with the following version of the Cartesi Rollups.
+
+| Component | Version |
+|---|---|
+| Cartesi Rollups Contracts | [v1.1.0](https://github.com/cartesi/rollups-contracts/releases/tag/v1.1.0) |
+| Cartesi Rollups Node | [v1.2.0](https://github.com/cartesi/rollups-node/releases/tag/v1.2.0) |
