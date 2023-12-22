@@ -7,6 +7,7 @@ package inspect
 import (
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -41,11 +42,11 @@ func (a *inspectAPI) InspectPost(c echo.Context) error {
 
 // Handle GET requests to /{payload}.
 func (a *inspectAPI) Inspect(c echo.Context, payload string) error {
-	payloadBytes, err := hexutil.Decode(payload)
+	decodedPayload, err := url.QueryUnescape(payload)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	return a.inspect(c, payloadBytes)
+	return a.inspect(c, []byte(decodedPayload))
 }
 
 // Send the inspect input to the model and wait until it is completed.
