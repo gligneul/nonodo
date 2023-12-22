@@ -4,6 +4,7 @@
 package nonodo
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"fmt"
@@ -81,7 +82,7 @@ func (s *NonodoSuite) TestItProcessesInspectInputs() {
 	const n = 3
 	for i := 0; i < n; i++ {
 		payload := s.makePayload()
-		response, err := s.inspectClient.InspectWithResponse(s.ctx, hexutil.Encode(payload))
+		response, err := s.sendInspect(payload)
 		s.Nil(err)
 		s.Equal(http.StatusOK, response.StatusCode())
 		s.Equal("0x", response.JSON200.ExceptionPayload)
@@ -105,7 +106,8 @@ func (s *NonodoSuite) TestItWorksWithExternalApplication() {
 
 	s.T().Log("sending inspect to external application")
 	payload := s.makePayload()
-	response, err := s.inspectClient.InspectWithResponse(s.ctx, hexutil.Encode(payload))
+
+	response, err := s.sendInspect(payload)
 	s.Require().Nil(err)
 	s.Require().Equal(http.StatusOK, response.StatusCode())
 	s.Require().Equal(payload, s.decodeHex(response.JSON200.Reports[0].Payload))
@@ -207,6 +209,19 @@ func (s *NonodoSuite) decodeHex(value string) []byte {
 	s.Require().Nil(err)
 	return bytes
 }
+
+// Send an inspect request with the given payload.
+func (s *NonodoSuite) sendInspect(payload []byte) (*inspect.InspectPostResponse, error) {
+	return s.inspectClient.InspectPostWithBodyWithResponse(
+		s.ctx,
+		"application/octet-stream",
+		bytes.NewReader(payload),
+	)
+}
+
+//
+// Suite entry point
+//
 
 func TestNonodoSuite(t *testing.T) {
 	suite.Run(t, &NonodoSuite{})
