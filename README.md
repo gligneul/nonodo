@@ -51,26 +51,6 @@ With the default configuration, NoNodo starts an Anvil node with the Cartesi Rol
 NoNodo uses the same deployment used by [sunodo](https://docs.sunodo.io/), so the contract addresses are the same.
 NoNodo offers some flags to configure Anvil, starting with `--anvil-*`.
 
-### Sending inputs
-
-To send an input to the Cartesi application, you may use cast, a command-line tool from the foundry
-package. For instance, the invocation below sends an input with contents `0xdeadbeef` to the running
-application.
-
-```
-INPUT=0xdeadbeef; \
-INPUT_BOX_ADDRESS=0x59b22D57D4f067708AB0c00552767405926dc768; \
-APPLICATION_ADDRESS=0x70ac08179605AF2D9e75782b8DEcDD3c22aA4D0C; \
-cast send \
-    --mnemonic "test test test test test test test test test test test junk" \
-    --rpc-url "http://localhost:8545" \
-    $INPUT_BOX_ADDRESS \
-	"addInput(address,bytes)(bytes32)" \
-    $APPLICATION_ADDRESS $INPUT
-```
-
-### APIs
-
 NoNodo exposes the Cartesi Rollups GraphQL (`/graphql`) and Inspect (`/inspect`) APIs for the application front-end, and the Rollup (`/rollup`) API for the application back-end.
 NoNodo uses the HTTP address and port set by the `--http-address` and `--http-port` flags.
 
@@ -94,4 +74,22 @@ To start NoNodo with the built-in echo application, use the `--built-in-echo` fl
 
 ```sh
 nonodo --built-in-echo
+```
+
+### Sending inputs
+
+To send an input to the Cartesi application, you may use cast, a command-line tool from the foundry
+package. For instance, the invocation below sends an input with contents `0xdeadbeef` to the running
+application.
+
+```
+INPUT=0xdeadbeef; \
+INPUT_BOX_ADDRESS=0x59b22D57D4f067708AB0c00552767405926dc768; \
+APPLICATION_ADDRESS=0x70ac08179605AF2D9e75782b8DEcDD3c22aA4D0C; \
+cast send \
+    --mnemonic "test test test test test test test test test test test junk" \
+    --rpc-url "http://localhost:8545" \
+    $INPUT_BOX_ADDRESS \
+	"addInput(address,bytes)(bytes32)" \
+    $APPLICATION_ADDRESS $INPUT
 ```
