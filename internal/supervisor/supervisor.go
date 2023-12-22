@@ -51,7 +51,7 @@ Loop:
 			if err != nil && !errors.Is(err, context.Canceled) {
 				log.Printf("%v: %v exitted with error: %v", w, worker, err)
 			} else {
-				log.Printf("%v: %v exitted with sucess", w, worker)
+				log.Printf("%v: %v exitted with success", w, worker)
 			}
 		}()
 		select {
