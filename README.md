@@ -57,6 +57,7 @@ NoNodo offers some flags to configure Anvil, starting with `--anvil-*`.
 
 NoNodo exposes the Cartesi Rollups GraphQL (`/graphql`) and Inspect (`/inspect`) APIs for the application front-end, and the Rollup (`/rollup`) API for the application back-end.
 NoNodo uses the HTTP address and port set by the `--http-address` and `--http-port` flags.
+By default, NoNodo binds to the `http://127.0.0.1:8080/` address.
 
 ### Running the Application
 
@@ -86,14 +87,38 @@ To send an input to the Cartesi application, you may use cast, a command-line to
 package. For instance, the invocation below sends an input with contents `0xdeadbeef` to the running
 application.
 
-```
+```sh
 INPUT=0xdeadbeef; \
 INPUT_BOX_ADDRESS=0x59b22D57D4f067708AB0c00552767405926dc768; \
 APPLICATION_ADDRESS=0x70ac08179605AF2D9e75782b8DEcDD3c22aA4D0C; \
 cast send \
     --mnemonic "test test test test test test test test test test test junk" \
     --rpc-url "http://localhost:8545" \
-    $INPUT_BOX_ADDRESS \
-	"addInput(address,bytes)(bytes32)" \
-    $APPLICATION_ADDRESS $INPUT
+    $INPUT_BOX_ADDRESS "addInput(address,bytes)(bytes32)" $APPLICATION_ADDRESS $INPUT
+```
+
+### GraphQL API
+
+NoNodo exposes the GraphQL reader API in the endpoint `http://127.0.0.1:8080/graphql`.
+You may access this address to use the GraphQL interactive playground in your web browser.
+You can also make POST requests directly to the GraphQL API.
+For instance, the command below gets the number of inputs.
+
+```sh
+QUERY='query { inputs { totalCount } }'; \
+curl \
+    -X POST \
+    -H 'Content-Type: application/json' \
+    -d "{\"query\": \"$QUERY\"}" \
+    http://127.0.0.1:8080/graphql
+```
+
+### Inspect API
+
+Nonodo exposes the Inspect API in the endpoint `http://127.0.0.1:8080/inspect`.
+Like the Rollups Node, you may send inspect requests with GET or POST methods.
+For instance, the command below sends an inspect input with payload `hi` to NoNodo.
+
+```
+curl -X POST -d "hi" http://127.0.0.1:8080/inspect/
 ```
