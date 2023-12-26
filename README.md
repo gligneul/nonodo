@@ -121,7 +121,7 @@ Like the Rollups Node, you may send inspect requests with GET or POST methods.
 For instance, the command below sends an inspect input with payload `hi` to NoNodo.
 
 ```
-curl -X POST -d "hi" http://127.0.0.1:8080/inspect/
+curl -X POST -d "hi" http://127.0.0.1:8080/inspect
 ```
 
 ## Compatibility

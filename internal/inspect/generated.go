@@ -176,7 +176,7 @@ func NewInspectPostRequestWithBody(server string, contentType string, body io.Re
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/")
+	operationPath := fmt.Sprintf("inspect")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -212,7 +212,7 @@ func NewInspectRequest(server string, payload string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/%s", pathParam0)
+	operationPath := fmt.Sprintf("inspect/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -397,10 +397,10 @@ func ParseInspectResponse(rsp *http.Response) (*InspectResponse, error) {
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Inspect DApp state via POST
-	// (POST /)
+	// (POST inspect)
 	InspectPost(ctx echo.Context) error
 	// Inspect DApp state via GET
-	// (GET /{payload})
+	// (GET inspect/{payload})
 	Inspect(ctx echo.Context, payload string) error
 }
 
@@ -462,7 +462,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/", wrapper.InspectPost)
-	router.GET(baseURL+"/:payload", wrapper.Inspect)
+	router.POST(baseURL+"inspect", wrapper.InspectPost)
+	router.GET(baseURL+"inspect/:payload", wrapper.Inspect)
 
 }

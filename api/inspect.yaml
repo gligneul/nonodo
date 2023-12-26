@@ -11,7 +11,7 @@ info:
     API that allows the DApp frontend to make inspect-state requests to the DApp backend.
 
 paths:
-  /{payload}:
+  inspect/{payload}:
     get:
       operationId: inspect
       summary: Inspect DApp state via GET
@@ -51,7 +51,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /:
+  inspect:
     post:
       operationId: inspect_post
       summary: Inspect DApp state via POST

@@ -23,7 +23,7 @@ const InspectPollInterval = time.Millisecond * 100
 // Register the rollup API to echo
 func Register(e *echo.Echo, model *model.NonodoModel) {
 	inspectAPI := &inspectAPI{model}
-	RegisterHandlersWithBaseURL(e, inspectAPI, "inspect")
+	RegisterHandlers(e, inspectAPI)
 }
 
 // Shared struct for request handlers.

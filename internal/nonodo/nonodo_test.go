@@ -154,7 +154,7 @@ func (s *NonodoSuite) SetupTest(opts NonodoOpts) {
 	graphqlEndpoint := fmt.Sprintf("http://%v:%v/graphql", opts.HttpAddress, opts.HttpPort)
 	s.graphqlClient = graphql.NewClient(graphqlEndpoint, nil)
 
-	inspectEndpoint := fmt.Sprintf("http://%v:%v/inspect", opts.HttpAddress, opts.HttpPort)
+	inspectEndpoint := fmt.Sprintf("http://%v:%v/", opts.HttpAddress, opts.HttpPort)
 	s.inspectClient, err = inspect.NewClientWithResponses(inspectEndpoint)
 	s.Nil(err)
 }
