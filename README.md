@@ -54,6 +54,10 @@ NoNodo exposes the Cartesi Rollups GraphQL (`/graphql`) and Inspect (`/inspect`)
 NoNodo uses the HTTP address and port set by the `--http-address` and `--http-port` flags.
 By default, NoNodo binds to the `http://127.0.0.1:8080/` address.
 
+![NoNodo Architecture](./docs/nonodo.svg)
+
+The image above illustrates the interaction between NoNodo, Anvil, and the application front-end and back-end.
+
 ### Running the Application
 
 NoNodo can run the application back-end as a sub-process.
