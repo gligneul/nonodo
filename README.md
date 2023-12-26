@@ -3,16 +3,10 @@
 ![Build](https://github.com/gligneul/nonodo/actions/workflows/build.yaml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gligneul/nonodo)](https://goreportcard.com/report/github.com/gligneul/nonodo)
 
-NoNodo is a development node for the [Cartesi Rollups](https://docs.cartesi.io/cartesi-rollups/) that was designed to work with applications running in the host machine instead of the Cartesi machine.
+NoNodo is a development node for [Cartesi Rollups](https://docs.cartesi.io/cartesi-rollups/) that was designed to work with applications running in the host machine instead of the Cartesi machine.
 So, the application developer doesn't need to be concerned with compiling their application to RISC-V.
 The application back-end should run in the developer's machine and call the Rollup HTTP API to process advance and inspect inputs.
-
-NoNodo is a valuable development workflow help, but there are some caveats the developer must be aware of:
-
-- The application will eventually need to be compiled to RISC-V or use a RISC-V runtime in case of interpreted languages;
-- In this mode, the application will not be running inside the sandbox of the Cartesi machine and will not block operations that won't be allowed when running inside a Cartesi machine, like accessing remote resources;
-- This mode only works for applications that use the Cartesi Rollups HTTP API and doesn't work with applications using the low-level API;
-- Performance inside a Cartesi machine will be much lower than running on the host.
+NoNodo is a valuable development workflow help, but there are some [caveats](#caveats) the developer must be aware of.
 
 ## Installation
 
@@ -116,7 +110,7 @@ curl \
 
 ### Inspect API
 
-Nonodo exposes the Inspect API in the endpoint `http://127.0.0.1:8080/inspect`.
+NoNodo exposes the Inspect API in the endpoint `http://127.0.0.1:8080/inspect`.
 Like the Rollups Node, you may send inspect requests with GET or POST methods.
 For instance, the command below sends an inspect input with payload `hi` to NoNodo.
 
@@ -132,3 +126,10 @@ NoNodo is compatible with the following version of the Cartesi Rollups.
 |---|---|
 | Cartesi Rollups Contracts | [v1.1.0](https://github.com/cartesi/rollups-contracts/releases/tag/v1.1.0) |
 | Cartesi Rollups Node | [v1.2.0](https://github.com/cartesi/rollups-node/releases/tag/v1.2.0) |
+
+## Caveats
+
+- The application will eventually need to be compiled to RISC-V or use a RISC-V runtime in case of interpreted languages;
+- With NoNodo, the application will not be running inside the sandbox of the Cartesi machine and will not block operations that won't be allowed when running inside a Cartesi machine, like accessing remote resources;
+- NoNodo only works for applications that use the Cartesi Rollups HTTP API and doesn't work with applications using the low-level API;
+- Performance inside a Cartesi machine will be much lower than running on the host.
