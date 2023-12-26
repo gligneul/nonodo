@@ -7,7 +7,7 @@ package supervisor
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os/exec"
 )
 
@@ -26,14 +26,14 @@ func (w CommandWorker) String() string {
 func (w CommandWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 	cmd := exec.CommandContext(ctx, w.Command, w.Args...)
 	cmd.Env = w.Env
-	cmd.Stderr = &commandLogger{name: w.Name}
-	cmd.Stdout = &commandLogger{name: w.Name}
+	cmd.Stderr = &commandLogger{buffName: "stdout", name: w.Name}
+	cmd.Stdout = &commandLogger{buffName: "stderr", name: w.Name}
 	cmd.Cancel = func() error {
 		// Sending Interrupt on Windows is not implemented, so we just kill the process.
 		// See: https://pkg.go.dev/os#Process.Signal
 		err := cmd.Process.Kill()
 		if err != nil {
-			log.Printf("%v: failed to send SIGTERM: %v", w, err)
+			slog.Warn("command: failed to kill process", "command", w, "error", err)
 		}
 		return err
 	}

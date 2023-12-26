@@ -6,11 +6,12 @@ package model
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 // Nonodo model shared among the internal workers.
@@ -53,8 +54,8 @@ func (m *NonodoModel) AddAdvanceInput(
 		BlockNumber: blockNumber,
 	}
 	m.advances = append(m.advances, &input)
-	log.Printf("nonodo: added advance input: index=%v sender=%v payload=0x%x",
-		input.Index, input.MsgSender, input.Payload)
+	slog.Info("nonodo: added advance input", "index", input.Index, "sender", input.MsgSender,
+		"payload", hexutil.Encode(input.Payload))
 }
 
 //
@@ -74,7 +75,8 @@ func (m *NonodoModel) AddInspectInput(payload []byte) int {
 		Payload: payload,
 	}
 	m.inspects = append(m.inspects, &input)
-	log.Printf("nonodo: added inspect input: index=%v payload=0x%x", input.Index, input.Payload)
+	slog.Info("nonodo: added inspect input", "index", input.Index,
+		"payload", hexutil.Encode(input.Payload))
 
 	return index
 }

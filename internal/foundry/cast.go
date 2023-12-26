@@ -6,9 +6,8 @@ package foundry
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os/exec"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -31,7 +30,7 @@ func AddInput(ctx context.Context, payload []byte) error {
 		"addInput(address,bytes)(bytes32)", // SIG
 		ApplicationAddress, input,          // ARGS
 	)
-	log.Printf(`calling: "%v"`, strings.Join(cmd.Args, `" "`))
+	slog.Info("adding input", "payload", hexutil.Encode(payload))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("cast: %w: %v", err, string(output))

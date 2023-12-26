@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,8 +19,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var startTime = time.Now()
-
 var cmd = &cobra.Command{
 	Use:     "nonodo [flags] [-- application [args]...]",
 	Short:   "Nonodo is a development node for Cartesi Rollups",
@@ -28,9 +26,11 @@ var cmd = &cobra.Command{
 	Version: versioninfo.Short(),
 }
 
+var debug bool
 var opts = nonodo.NewNonodoOpts()
 
 func init() {
+	cmd.Flags().BoolVarP(&debug, "debug", "d", false, "If set, enable debug output")
 	cmd.Flags().IntVar(&opts.AnvilPort, "anvil-port", opts.AnvilPort,
 		"HTTP port used by Anvil")
 	cmd.Flags().BoolVar(&opts.AnvilVerbose, "anvil-verbose", opts.AnvilVerbose,
@@ -48,6 +48,17 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) {
+	var startTime = time.Now()
+
+	logOpts := new(slog.HandlerOptions)
+	if debug {
+		logOpts.Level = slog.LevelDebug
+	} else {
+		logOpts.Level = slog.LevelInfo
+	}
+	logger := slog.New(slog.NewTextHandler(os.Stdout, logOpts))
+	slog.SetDefault(logger)
+
 	checkEthAddress(cmd, "address-input-box")
 	checkEthAddress(cmd, "address-application")
 	opts.ApplicationArgs = args
@@ -59,8 +70,7 @@ func run(cmd *cobra.Command, args []string) {
 	go func() {
 		select {
 		case <-ready:
-			duration := time.Since(startTime)
-			log.Printf("nonodo: ready after %v", duration)
+			slog.Info("nonodo: ready", "after", time.Since(startTime))
 		case <-ctx.Done():
 		}
 	}()

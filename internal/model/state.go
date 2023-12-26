@@ -5,9 +5,10 @@ package model
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 // Interface that represents the state of the rollup.
@@ -73,7 +74,7 @@ type rollupsStateAdvance struct {
 }
 
 func newRollupsStateAdvance(input *AdvanceInput) *rollupsStateAdvance {
-	log.Printf("nonodo: processing advance input %v", input.Index)
+	slog.Info("nonodo: processing advance", "index", input.Index)
 	return &rollupsStateAdvance{
 		input: input,
 	}
@@ -86,7 +87,7 @@ func (s *rollupsStateAdvance) finish(status CompletionStatus) {
 		s.input.Notices = s.notices
 	}
 	s.input.Reports = s.reports
-	log.Printf("nonodo: finished advance")
+	slog.Info("nonodo: finished advance")
 }
 
 func (s *rollupsStateAdvance) addVoucher(destination common.Address, payload []byte) (int, error) {
@@ -98,8 +99,8 @@ func (s *rollupsStateAdvance) addVoucher(destination common.Address, payload []b
 		Payload:     payload,
 	}
 	s.vouchers = append(s.vouchers, voucher)
-	log.Printf("nonodo: added voucher index=%v destination=%v payload=0x%x",
-		index, destination, payload)
+	slog.Info("nonodo: added voucher", "index", index, "destination", destination,
+		"payload", hexutil.Encode(payload))
 	return index, nil
 }
 
@@ -111,7 +112,7 @@ func (s *rollupsStateAdvance) addNotice(payload []byte) (int, error) {
 		Payload:    payload,
 	}
 	s.notices = append(s.notices, notice)
-	log.Printf("nonodo: added notice index=%v payload=0x%x", index, payload)
+	slog.Info("nonodo: added notice", "index", index, "payload", hexutil.Encode(payload))
 	return index, nil
 }
 
@@ -123,7 +124,7 @@ func (s *rollupsStateAdvance) addReport(payload []byte) error {
 		Payload:    payload,
 	}
 	s.reports = append(s.reports, report)
-	log.Printf("nonodo: added report index=%v payload=0x%x", index, payload)
+	slog.Info("nonodo: added report", "index", index, "payload", hexutil.Encode(payload))
 	return nil
 }
 
@@ -131,7 +132,7 @@ func (s *rollupsStateAdvance) registerException(payload []byte) error {
 	s.input.Status = CompletionStatusException
 	s.input.Reports = s.reports
 	s.input.Exception = payload
-	log.Printf("nonodo: finished advance with exception")
+	slog.Info("nonodo: finished advance with exception")
 	return nil
 }
 
@@ -150,7 +151,7 @@ func newRollupsStateInspect(
 	input *InspectInput,
 	getProccessedInputCount func() int,
 ) *rollupsStateInspect {
-	log.Printf("nonodo: processing inspect input %v", input.Index)
+	slog.Info("nonodo: processing inspect", "index", input.Index)
 	return &rollupsStateInspect{
 		input:                   input,
 		getProccessedInputCount: getProccessedInputCount,
@@ -161,7 +162,7 @@ func (s *rollupsStateInspect) finish(status CompletionStatus) {
 	s.input.Status = status
 	s.input.ProccessedInputCount = s.getProccessedInputCount()
 	s.input.Reports = s.reports
-	log.Printf("nonodo: finished inspect")
+	slog.Info("nonodo: finished inspect")
 }
 
 func (s *rollupsStateInspect) addVoucher(destination common.Address, payload []byte) (int, error) {
@@ -180,7 +181,7 @@ func (s *rollupsStateInspect) addReport(payload []byte) error {
 		Payload:    payload,
 	}
 	s.reports = append(s.reports, report)
-	log.Printf("nonodo: added report index=%v payload=0x%x", index, payload)
+	slog.Info("nonodo: added report", "index", index, "payload", hexutil.Encode(payload))
 	return nil
 }
 
@@ -189,6 +190,6 @@ func (s *rollupsStateInspect) registerException(payload []byte) error {
 	s.input.ProccessedInputCount = s.getProccessedInputCount()
 	s.input.Reports = s.reports
 	s.input.Exception = payload
-	log.Printf("nonodo: finished inspect with exception")
+	slog.Info("nonodo: finished inspect with exception")
 	return nil
 }

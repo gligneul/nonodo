@@ -6,7 +6,7 @@ package foundry
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path"
 
@@ -22,11 +22,11 @@ type AnvilWorker struct {
 	Verbose bool
 }
 
-func (s AnvilWorker) String() string {
+func (w AnvilWorker) String() string {
 	return "anvil"
 }
 
-func (s AnvilWorker) Start(ctx context.Context, ready chan<- struct{}) error {
+func (w AnvilWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 	// create temp dir
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -35,7 +35,7 @@ func (s AnvilWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 	defer func() {
 		err := os.RemoveAll(tempDir)
 		if err != nil {
-			log.Printf("anvil: failed to remove temp file: %v", err)
+			slog.Warn("anvil: failed to remove temp file", "error", err)
 		}
 	}()
 
@@ -49,16 +49,16 @@ func (s AnvilWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 
 	// start server worker
 	args := []string{
-		"--port", fmt.Sprint(s.Port),
+		"--port", fmt.Sprint(w.Port),
 		"--load-state", stateFile,
 	}
-	if !s.Verbose {
+	if !w.Verbose {
 		args = append(args, "--silent")
 	}
 	var server supervisor.ServerWorker
 	server.Name = "anvil"
 	server.Command = "anvil"
 	server.Args = args
-	server.Port = s.Port
+	server.Port = w.Port
 	return server.Start(ctx, ready)
 }

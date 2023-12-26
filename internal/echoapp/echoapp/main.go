@@ -8,7 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -43,7 +43,7 @@ func run(cmd *cobra.Command, args []string) {
 	go func() {
 		select {
 		case <-ready:
-			log.Print("echo: application started")
+			slog.Info("echo: application started")
 		case <-ctx.Done():
 		}
 	}()

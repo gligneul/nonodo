@@ -7,7 +7,7 @@ package echoapp
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/gligneul/nonodo/internal/rollup"
@@ -78,7 +78,7 @@ func handleAdvance(
 	client *rollup.ClientWithResponses,
 	advance rollup.Advance,
 ) error {
-	log.Printf("echo: handling advance input")
+	slog.Info("echo: handling advance input")
 
 	// add voucher
 	voucherReq := rollup.Voucher{
@@ -125,7 +125,7 @@ func handleInspect(
 	client *rollup.ClientWithResponses,
 	inspect rollup.Inspect,
 ) error {
-	log.Printf("echo: handling inspect input")
+	slog.Info("echo: handling inspect input")
 
 	// add report
 	reportReq := rollup.Report(inspect)

@@ -6,7 +6,7 @@ package supervisor
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 )
@@ -31,7 +31,7 @@ func (w HttpWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("http: listening on %v", ln.Addr())
+	slog.Info("http: server is ready", "address", ln.Addr())
 	ready <- struct{}{}
 
 	// create the goroutine to shutdown server
@@ -39,7 +39,7 @@ func (w HttpWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 		<-ctx.Done()
 		err := server.Shutdown(ctx)
 		if err != nil && !errors.Is(err, context.Canceled) {
-			log.Printf("http: error shutting down http server: %v", err)
+			slog.Warn("http: error shutting down server", "error", err)
 		}
 	}()
 

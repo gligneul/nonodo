@@ -8,7 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -42,6 +42,7 @@ func (w SupervisorWorker) Start(ctx context.Context, ready chan<- struct{}) erro
 Loop:
 	for _, worker := range w.Workers {
 		worker := worker
+		logger := slog.With("worker", worker)
 		wg.Add(1)
 		innerReady := make(chan struct{})
 		go func() {
@@ -49,16 +50,16 @@ Loop:
 			defer cancel()
 			err := worker.Start(ctx, innerReady)
 			if err != nil && !errors.Is(err, context.Canceled) {
-				log.Printf("%v: %v exitted with error: %v", w, worker, err)
+				logger.Warn("supervisor: worker exitted with error", "error", err)
 			} else {
-				log.Printf("%v: %v exitted with success", w, worker)
+				logger.Debug("supervisor: worker exitted with success")
 			}
 		}()
 		select {
 		case <-innerReady:
-			log.Printf("%v: %v is ready", w, worker)
+			logger.Debug("supervisor: worker is ready")
 		case <-time.After(timeout):
-			log.Printf("%v: %v timed out", w, worker)
+			logger.Warn("supervisor: worker timed out")
 			cancel()
 			break Loop
 		case <-ctx.Done():
@@ -78,9 +79,9 @@ Loop:
 	}()
 	select {
 	case <-wait:
-		log.Printf("%v: all workers exitted", w)
+		slog.Debug("supervisor: all workers exitted")
 		return nil
 	case <-time.After(timeout):
-		return fmt.Errorf("%v: timed out waiting for workers", w)
+		return fmt.Errorf("supervisor: timed out waiting for workers")
 	}
 }
