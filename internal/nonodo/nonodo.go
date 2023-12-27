@@ -28,7 +28,7 @@ var ApplicationConflictErr = errors.New("can't use built-in echo with custom app
 type NonodoOpts struct {
 	AnvilPort          int
 	AnvilVerbose       bool
-	BuiltInEcho        bool
+	EnableEcho         bool
 	HttpAddress        string
 	HttpPort           int
 	InputBoxAddress    string
@@ -41,7 +41,7 @@ func NewNonodoOpts() NonodoOpts {
 	return NonodoOpts{
 		AnvilPort:          foundry.AnvilDefaultPort,
 		AnvilVerbose:       false,
-		BuiltInEcho:        false,
+		EnableEcho:         false,
 		HttpAddress:        "127.0.0.1",
 		HttpPort:           8080,
 		InputBoxAddress:    foundry.InputBoxAddress,
@@ -52,7 +52,7 @@ func NewNonodoOpts() NonodoOpts {
 
 // Start nonodo.
 func NewNonodoWorker(opts NonodoOpts) (w supervisor.SupervisorWorker, err error) {
-	if opts.BuiltInEcho && len(opts.ApplicationArgs) > 0 {
+	if opts.EnableEcho && len(opts.ApplicationArgs) > 0 {
 		return w, ApplicationConflictErr
 	}
 
@@ -86,7 +86,7 @@ func NewNonodoWorker(opts NonodoOpts) (w supervisor.SupervisorWorker, err error)
 			Command: opts.ApplicationArgs[0],
 			Args:    opts.ApplicationArgs[1:],
 		})
-	} else if opts.BuiltInEcho {
+	} else if opts.EnableEcho {
 		w.Workers = append(w.Workers, echoapp.EchoAppWorker{
 			RollupEndpoint: fmt.Sprintf("http://127.0.0.1:%v/rollup", opts.HttpPort),
 		})

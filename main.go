@@ -21,7 +21,7 @@ import (
 
 var cmd = &cobra.Command{
 	Use:     "nonodo [flags] [-- application [args]...]",
-	Short:   "Nonodo is a development node for Cartesi Rollups",
+	Short:   "nonodo is a development node for Cartesi Rollups",
 	Run:     run,
 	Version: versioninfo.Short(),
 }
@@ -30,21 +30,28 @@ var debug bool
 var opts = nonodo.NewNonodoOpts()
 
 func init() {
-	cmd.Flags().BoolVarP(&debug, "debug", "d", false, "If set, enable debug output")
+	// address-*
+	cmd.Flags().StringVar(&opts.ApplicationAddress, "address-application", opts.ApplicationAddress,
+		"Application contract address")
+	cmd.Flags().StringVar(&opts.InputBoxAddress, "address-input-box", opts.InputBoxAddress,
+		"InputBox contract address")
+
+	// anvil-*
 	cmd.Flags().IntVar(&opts.AnvilPort, "anvil-port", opts.AnvilPort,
 		"HTTP port used by Anvil")
 	cmd.Flags().BoolVar(&opts.AnvilVerbose, "anvil-verbose", opts.AnvilVerbose,
 		"If set, prints Anvil's output")
-	cmd.Flags().BoolVar(&opts.BuiltInEcho, "built-in-echo", opts.BuiltInEcho,
+
+	// enable-*
+	cmd.Flags().BoolVarP(&debug, "enable-debug", "d", false, "If set, enable debug output")
+	cmd.Flags().BoolVar(&opts.EnableEcho, "enable-echo", opts.EnableEcho,
 		"If set, nonodo starts a built-in echo application")
+
+	// http-*
 	cmd.Flags().StringVar(&opts.HttpAddress, "http-address", opts.HttpAddress,
 		"HTTP address used by nonodo to serve its APIs")
 	cmd.Flags().IntVar(&opts.HttpPort, "http-port", opts.HttpPort,
 		"HTTP port used by nonodo to serve its APIs")
-	cmd.Flags().StringVar(&opts.InputBoxAddress, "address-input-box", opts.InputBoxAddress,
-		"InputBox contract address")
-	cmd.Flags().StringVar(&opts.ApplicationAddress, "address-application", opts.ApplicationAddress,
-		"Application contract address")
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -59,6 +66,9 @@ func run(cmd *cobra.Command, args []string) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, logOpts))
 	slog.SetDefault(logger)
 
+	if opts.AnvilPort == 0 {
+		exitf("anvil port cannot be 0")
+	}
 	checkEthAddress(cmd, "address-input-box")
 	checkEthAddress(cmd, "address-application")
 	opts.ApplicationArgs = args
@@ -86,7 +96,8 @@ func main() {
 }
 
 func exitf(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, format, args...)
+	err := fmt.Sprintf(format, args...)
+	slog.Error("configuration error", "error", err)
 	os.Exit(1)
 }
 
@@ -96,10 +107,10 @@ func checkEthAddress(cmd *cobra.Command, varName string) {
 		cobra.CheckErr(err)
 		bytes, err := hexutil.Decode(value)
 		if err != nil {
-			exitf("invalid address for --%v: %v\n", varName, err)
+			exitf("invalid address for --%v: %v", varName, err)
 		}
 		if len(bytes) != common.AddressLength {
-			exitf("invalid address for --%v: wrong length\n", varName)
+			exitf("invalid address for --%v: wrong length", varName)
 		}
 	}
 }

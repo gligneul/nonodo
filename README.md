@@ -74,10 +74,10 @@ nonodo -- ./my-app
 NoNodo has a built-in echo application that generates a voucher, a notice, and a report for each advance input.
 The echo also generates a report for each inspect input.
 This option is useful when testing the application front-end without a working back-end.
-To start NoNodo with the built-in echo application, use the `--built-in-echo` flag.
+To start NoNodo with the built-in echo application, use the `--enable-echo` flag.
 
 ```sh
-nonodo --built-in-echo
+nonodo --enable-echo
 ```
 
 ### Sending inputs

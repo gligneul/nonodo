@@ -40,7 +40,7 @@ type NonodoSuite struct {
 
 func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
 	opts := NewNonodoOpts()
-	opts.BuiltInEcho = true
+	opts.EnableEcho = true
 	s.SetupTest(opts)
 
 	s.T().Log("sending advance inputs")
@@ -75,7 +75,7 @@ func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
 
 func (s *NonodoSuite) TestItProcessesInspectInputs() {
 	opts := NewNonodoOpts()
-	opts.BuiltInEcho = true
+	opts.EnableEcho = true
 	s.SetupTest(opts)
 
 	s.T().Log("sending inspect inputs")
@@ -116,7 +116,7 @@ func (s *NonodoSuite) TestItWorksWithExternalApplication() {
 func TestItFailsToStartWhenThereIsApplicationConflict(t *testing.T) {
 	// This test doesn't use the suite because the worker fails imediatelly.
 	opts := NewNonodoOpts()
-	opts.BuiltInEcho = true
+	opts.EnableEcho = true
 	opts.ApplicationArgs = []string{"test"}
 	_, err := NewNonodoWorker(opts)
 	assert.ErrorIs(t, ApplicationConflictErr, err)
