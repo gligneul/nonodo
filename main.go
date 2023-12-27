@@ -16,6 +16,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gligneul/nonodo/internal/nonodo"
+	"github.com/lmittmann/tint"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +29,7 @@ var cmd = &cobra.Command{
 }
 
 var debug bool
+var color bool
 var opts = nonodo.NewNonodoOpts()
 
 func init() {
@@ -44,6 +47,7 @@ func init() {
 
 	// enable-*
 	cmd.Flags().BoolVarP(&debug, "enable-debug", "d", false, "If set, enable debug output")
+	cmd.Flags().BoolVar(&color, "enable-color", true, "If set, enables logs color")
 	cmd.Flags().BoolVar(&opts.EnableEcho, "enable-echo", opts.EnableEcho,
 		"If set, nonodo starts a built-in echo application")
 
@@ -57,13 +61,15 @@ func init() {
 func run(cmd *cobra.Command, args []string) {
 	var startTime = time.Now()
 
-	logOpts := new(slog.HandlerOptions)
+	logOpts := new(tint.Options)
 	if debug {
 		logOpts.Level = slog.LevelDebug
-	} else {
-		logOpts.Level = slog.LevelInfo
 	}
-	logger := slog.New(slog.NewTextHandler(os.Stdout, logOpts))
+	logOpts.AddSource = debug
+	logOpts.NoColor = !color || !isatty.IsTerminal(os.Stdout.Fd())
+	logOpts.TimeFormat = "[15:04:05.000]"
+	handler := tint.NewHandler(os.Stdout, logOpts)
+	logger := slog.New(handler)
 	slog.SetDefault(logger)
 
 	if opts.AnvilPort == 0 {
