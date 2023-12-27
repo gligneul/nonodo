@@ -6,6 +6,7 @@ package inputter
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/cartesi/rollups-node/pkg/contracts"
@@ -38,16 +39,16 @@ func (w InputterWorker) String() string {
 func (w InputterWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 	client, err := ethclient.DialContext(ctx, w.Provider)
 	if err != nil {
-		return err
+		return fmt.Errorf("inputter: failed to dial: %w", err)
 	}
 
 	inputBox, err := contracts.NewInputBox(w.InputBoxAddress, client)
 	if err != nil {
-		return err
+		return fmt.Errorf("inputter: failed to bind input box: %w", err)
 	}
 
 	logs := make(chan *contracts.InputBoxInputAdded)
-	startingBlock := findGenesis(w.InputBoxAddress)
+	var startingBlock uint64 = 0
 	opts := bind.WatchOpts{
 		Start:   &startingBlock,
 		Context: ctx,
@@ -55,7 +56,7 @@ func (w InputterWorker) Start(ctx context.Context, ready chan<- struct{}) error 
 	filter := []common.Address{w.ApplicationAddress}
 	sub, err := inputBox.WatchInputAdded(&opts, logs, filter, nil)
 	if err != nil {
-		return fmt.Errorf("failed to watch inputs: %w", err)
+		return fmt.Errorf("inputter: failed to watch inputs: %w", err)
 	}
 
 	ready <- struct{}{}
@@ -68,8 +69,9 @@ func (w InputterWorker) Start(ctx context.Context, ready chan<- struct{}) error 
 		case log := <-logs:
 			header, err := client.HeaderByHash(ctx, log.Raw.BlockHash)
 			if err != nil {
-				return fmt.Errorf("failed to get tx header: %w", err)
+				return fmt.Errorf("inputter: failed to get tx header: %w", err)
 			}
+			slog.Debug("inputter: read event log", "log", log)
 			w.Model.AddAdvanceInput(
 				log.Sender,
 				log.Input,
@@ -78,8 +80,4 @@ func (w InputterWorker) Start(ctx context.Context, ready chan<- struct{}) error 
 			)
 		}
 	}
-}
-
-func findGenesis(contract common.Address) uint64 {
-	return 1
 }
