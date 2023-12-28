@@ -9,10 +9,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/cartesi/rollups-node/pkg/contracts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/gligneul/nonodo/internal/contracts"
 )
 
 type Model interface {

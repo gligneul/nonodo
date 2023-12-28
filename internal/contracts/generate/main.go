@@ -43,26 +43,6 @@ var bindings = []contractBinding{
 		typeName: "InputBox",
 		outFile:  "input_box.go",
 	},
-	{
-		jsonPath: baseContractsPath + "dapp/CartesiDAppFactory.sol/CartesiDAppFactory.json",
-		typeName: "CartesiDAppFactory",
-		outFile:  "cartesi_dapp_factory.go",
-	},
-	{
-		jsonPath: baseContractsPath + "dapp/CartesiDApp.sol/CartesiDApp.json",
-		typeName: "CartesiDApp",
-		outFile:  "cartesi_dapp.go",
-	},
-	{
-		jsonPath: baseContractsPath + "consensus/authority/Authority.sol/Authority.json",
-		typeName: "Authority",
-		outFile:  "authority.go",
-	},
-	{
-		jsonPath: baseContractsPath + "history/History.sol/History.json",
-		typeName: "History",
-		outFile:  "history.go",
-	},
 }
 
 func main() {
