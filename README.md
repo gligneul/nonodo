@@ -118,8 +118,24 @@ NoNodo exposes the Inspect API in the endpoint `http://127.0.0.1:8080/inspect`.
 Like the Rollups Node, you may send inspect requests with GET or POST methods.
 For instance, the command below sends an inspect input with payload `hi` to NoNodo.
 
-```
+```sh
 curl -X POST -d "hi" http://127.0.0.1:8080/inspect
+```
+
+### Connecting to Test Net
+
+NoNodo can connect to an external Ethereum node instead of setting up a local Anvil node.
+To do so, pass the RPC URL to the `--rpc-url` command-line parameter.
+When connecting to an external node, you must pass the input-box deployment block number to the parameter `--contracts-input-box-block`.
+As an example, the command below reads all the inputs sent to the [echo application](https://github.com/cartesi/rollups-deployment/blob/bba9e038d213f4c78ae8db41e4b095d790101ff1/echo-python/sepolia.values.json) on the Sepolia test net.
+
+```sh
+nonodo \
+    --enable-echo \
+    --contracts-application-address 0x9f12D4365806FC000D6555ACB85c5371b464E506 \
+    --contracts-input-box-address 0x59b22D57D4f067708AB0c00552767405926dc768 \
+    --contracts-input-box-block 3963384 \
+    --rpc-url wss://eth-sepolia.g.alchemy.com/v2/$ALCHEMY_API_KEY
 ```
 
 ## Compatibility

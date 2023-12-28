@@ -33,17 +33,19 @@ var color bool
 var opts = nonodo.NewNonodoOpts()
 
 func init() {
-	// address-*
-	cmd.Flags().StringVar(&opts.ApplicationAddress, "address-application", opts.ApplicationAddress,
-		"Application contract address")
-	cmd.Flags().StringVar(&opts.InputBoxAddress, "address-input-box", opts.InputBoxAddress,
-		"InputBox contract address")
-
 	// anvil-*
 	cmd.Flags().IntVar(&opts.AnvilPort, "anvil-port", opts.AnvilPort,
 		"HTTP port used by Anvil")
 	cmd.Flags().BoolVar(&opts.AnvilVerbose, "anvil-verbose", opts.AnvilVerbose,
 		"If set, prints Anvil's output")
+
+	// contracts-*
+	cmd.Flags().StringVar(&opts.ApplicationAddress, "contracts-application-address",
+		opts.ApplicationAddress, "Application contract address")
+	cmd.Flags().StringVar(&opts.InputBoxAddress, "contracts-input-box-address",
+		opts.InputBoxAddress, "InputBox contract address")
+	cmd.Flags().Uint64Var(&opts.InputBoxBlock, "contracts-input-box-block",
+		opts.InputBoxBlock, "InputBox deployment block number")
 
 	// enable-*
 	cmd.Flags().BoolVarP(&debug, "enable-debug", "d", false, "If set, enable debug output")
@@ -56,11 +58,16 @@ func init() {
 		"HTTP address used by nonodo to serve its APIs")
 	cmd.Flags().IntVar(&opts.HttpPort, "http-port", opts.HttpPort,
 		"HTTP port used by nonodo to serve its APIs")
+
+	// rpc-url
+	cmd.Flags().StringVar(&opts.RpcUrl, "rpc-url", opts.RpcUrl,
+		"If set, nonodo connects to this url instead of setting up Anvil")
 }
 
 func run(cmd *cobra.Command, args []string) {
 	var startTime = time.Now()
 
+	// setup log
 	logOpts := new(tint.Options)
 	if debug {
 		logOpts.Level = slog.LevelDebug
@@ -72,16 +79,22 @@ func run(cmd *cobra.Command, args []string) {
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 
+	// check args
 	if opts.AnvilPort == 0 {
-		exitf("anvil port cannot be 0")
+		exitf("--anvil-port cannot be 0")
+	}
+	if cmd.Flags().Changed("rpc-url") && !cmd.Flags().Changed("contracts-input-box-block") {
+		exitf("must set --contracts-input-box-block when setting --rpc-url")
 	}
 	checkEthAddress(cmd, "address-input-box")
 	checkEthAddress(cmd, "address-application")
 	opts.ApplicationArgs = args
 
+	// handle signals with notify context
 	ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
+	// start nonodo
 	ready := make(chan struct{}, 1)
 	go func() {
 		select {
@@ -90,7 +103,6 @@ func run(cmd *cobra.Command, args []string) {
 		case <-ctx.Done():
 		}
 	}()
-
 	w, err := nonodo.NewNonodoWorker(opts)
 	cobra.CheckErr(err)
 	err = w.Start(ctx, ready)

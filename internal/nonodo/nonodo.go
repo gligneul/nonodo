@@ -26,14 +26,24 @@ var ApplicationConflictErr = errors.New("can't use built-in echo with custom app
 
 // Options to nonodo.
 type NonodoOpts struct {
-	AnvilPort          int
-	AnvilVerbose       bool
-	EnableEcho         bool
-	HttpAddress        string
-	HttpPort           int
+	AnvilPort    int
+	AnvilVerbose bool
+
+	HttpAddress string
+	HttpPort    int
+
 	InputBoxAddress    string
+	InputBoxBlock      uint64
 	ApplicationAddress string
-	ApplicationArgs    []string
+
+	// If RpcUrl is set, connect to it instead of anvil.
+	RpcUrl string
+
+	// If set, start echo dapp.
+	EnableEcho bool
+
+	// If set, start application.
+	ApplicationArgs []string
 }
 
 // Create the options struct with default values.
@@ -41,11 +51,13 @@ func NewNonodoOpts() NonodoOpts {
 	return NonodoOpts{
 		AnvilPort:          devnet.AnvilDefaultPort,
 		AnvilVerbose:       false,
-		EnableEcho:         false,
 		HttpAddress:        "127.0.0.1",
 		HttpPort:           8080,
 		InputBoxAddress:    devnet.InputBoxAddress,
+		InputBoxBlock:      0,
 		ApplicationAddress: devnet.ApplicationAddress,
+		RpcUrl:             "",
+		EnableEcho:         false,
 		ApplicationArgs:    nil,
 	}
 }
@@ -66,14 +78,18 @@ func NewNonodoWorker(opts NonodoOpts) (w supervisor.SupervisorWorker, err error)
 	inspect.Register(e, model)
 	reader.Register(e, model)
 
-	w.Workers = append(w.Workers, devnet.AnvilWorker{
-		Port:    opts.AnvilPort,
-		Verbose: opts.AnvilVerbose,
-	})
+	if opts.RpcUrl == "" {
+		w.Workers = append(w.Workers, devnet.AnvilWorker{
+			Port:    opts.AnvilPort,
+			Verbose: opts.AnvilVerbose,
+		})
+		opts.RpcUrl = fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort)
+	}
 	w.Workers = append(w.Workers, inputter.InputterWorker{
 		Model:              model,
-		Provider:           fmt.Sprintf("ws://127.0.0.1:%v", opts.AnvilPort),
+		Provider:           opts.RpcUrl,
 		InputBoxAddress:    common.HexToAddress(opts.InputBoxAddress),
+		InputBoxBlock:      opts.InputBoxBlock,
 		ApplicationAddress: common.HexToAddress(opts.ApplicationAddress),
 	})
 	w.Workers = append(w.Workers, supervisor.HttpWorker{
