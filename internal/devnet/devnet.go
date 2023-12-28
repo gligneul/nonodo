@@ -1,7 +1,7 @@
 // Copyright (c) Gabriel de Quadros Ligneul
 // SPDX-License-Identifier: Apache-2.0 (see LICENSE)
 
-package foundry
+package devnet
 
 // Input box address in devnet.
 const InputBoxAddress = "0x59b22D57D4f067708AB0c00552767405926dc768"

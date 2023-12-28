@@ -10,8 +10,8 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gligneul/nonodo/internal/devnet"
 	"github.com/gligneul/nonodo/internal/echoapp"
-	"github.com/gligneul/nonodo/internal/foundry"
 	"github.com/gligneul/nonodo/internal/inputter"
 	"github.com/gligneul/nonodo/internal/inspect"
 	"github.com/gligneul/nonodo/internal/model"
@@ -39,13 +39,13 @@ type NonodoOpts struct {
 // Create the options struct with default values.
 func NewNonodoOpts() NonodoOpts {
 	return NonodoOpts{
-		AnvilPort:          foundry.AnvilDefaultPort,
+		AnvilPort:          devnet.AnvilDefaultPort,
 		AnvilVerbose:       false,
 		EnableEcho:         false,
 		HttpAddress:        "127.0.0.1",
 		HttpPort:           8080,
-		InputBoxAddress:    foundry.InputBoxAddress,
-		ApplicationAddress: foundry.ApplicationAddress,
+		InputBoxAddress:    devnet.InputBoxAddress,
+		ApplicationAddress: devnet.ApplicationAddress,
 		ApplicationArgs:    nil,
 	}
 }
@@ -66,7 +66,7 @@ func NewNonodoWorker(opts NonodoOpts) (w supervisor.SupervisorWorker, err error)
 	inspect.Register(e, model)
 	reader.Register(e, model)
 
-	w.Workers = append(w.Workers, foundry.AnvilWorker{
+	w.Workers = append(w.Workers, devnet.AnvilWorker{
 		Port:    opts.AnvilPort,
 		Verbose: opts.AnvilVerbose,
 	})

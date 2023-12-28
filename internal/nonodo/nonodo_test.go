@@ -15,7 +15,7 @@ import (
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/gligneul/nonodo/internal/foundry"
+	"github.com/gligneul/nonodo/internal/devnet"
 	"github.com/gligneul/nonodo/internal/inspect"
 	"github.com/gligneul/nonodo/internal/readerclient"
 	"github.com/stretchr/testify/assert"
@@ -48,7 +48,7 @@ func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
 	payloads := make([][]byte, n)
 	for i := 0; i < n; i++ {
 		payloads[i] = s.makePayload()
-		err := foundry.AddInput(s.ctx, payloads[i])
+		err := devnet.AddInput(s.ctx, payloads[i])
 		s.Require().Nil(err)
 	}
 
@@ -64,10 +64,10 @@ func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
 		s.Equal(i, input.Index)
 		s.Equal(payloads[i], s.decodeHex(input.Payload))
 		s.Equal(payloads[i], s.decodeHex(input.Payload))
-		s.Equal(foundry.SenderAddress[:], s.decodeHex(input.MsgSender))
+		s.Equal(devnet.SenderAddress[:], s.decodeHex(input.MsgSender))
 		voucher := input.Vouchers.Edges[0].Node
 		s.Equal(payloads[i], s.decodeHex(voucher.Payload))
-		s.Equal(foundry.SenderAddress[:], s.decodeHex(voucher.Destination))
+		s.Equal(devnet.SenderAddress[:], s.decodeHex(voucher.Destination))
 		s.Equal(payloads[i], s.decodeHex(input.Notices.Edges[0].Node.Payload))
 		s.Equal(payloads[i], s.decodeHex(input.Reports.Edges[0].Node.Payload))
 	}
