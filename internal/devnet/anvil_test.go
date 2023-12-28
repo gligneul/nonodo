@@ -5,6 +5,7 @@ package devnet
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -20,7 +21,7 @@ func TestAnvilWorker(t *testing.T) {
 
 	w := AnvilWorker{
 		Port:    AnvilDefaultPort,
-		Verbose: false,
+		Verbose: true,
 	}
 
 	// start worker in goroutine
@@ -40,8 +41,16 @@ func TestAnvilWorker(t *testing.T) {
 	}
 
 	// send input
-	err := AddInput(ctx, common.Hex2Bytes("deadbeef"))
+	rpcUrl := fmt.Sprintf("http://127.0.0.1:%v", AnvilDefaultPort)
+	payload := common.Hex2Bytes("deadbeef")
+	err := AddInput(ctx, rpcUrl, payload)
 	assert.Nil(t, err)
+
+	// read input
+	events, err := GetInputAdded(ctx, rpcUrl)
+	assert.Nil(t, err)
+	assert.Len(t, events, 1)
+	assert.Equal(t, payload, events[0].Input)
 
 	// stop worker
 	workerCancel()

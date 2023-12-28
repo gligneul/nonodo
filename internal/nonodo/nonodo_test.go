@@ -30,6 +30,7 @@ type NonodoSuite struct {
 	timeoutCancel context.CancelFunc
 	workerCancel  context.CancelFunc
 	workerResult  chan error
+	rpcUrl        string
 	graphqlClient graphql.Client
 	inspectClient *inspect.ClientWithResponses
 }
@@ -48,7 +49,7 @@ func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
 	payloads := make([][]byte, n)
 	for i := 0; i < n; i++ {
 		payloads[i] = s.makePayload()
-		err := devnet.AddInput(s.ctx, payloads[i])
+		err := devnet.AddInput(s.ctx, s.rpcUrl, payloads[i])
 		s.Require().Nil(err)
 	}
 
@@ -64,10 +65,10 @@ func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
 		s.Equal(i, input.Index)
 		s.Equal(payloads[i], s.decodeHex(input.Payload))
 		s.Equal(payloads[i], s.decodeHex(input.Payload))
-		s.Equal(devnet.SenderAddress[:], s.decodeHex(input.MsgSender))
+		s.Equal(devnet.SenderAddress, input.MsgSender)
 		voucher := input.Vouchers.Edges[0].Node
 		s.Equal(payloads[i], s.decodeHex(voucher.Payload))
-		s.Equal(devnet.SenderAddress[:], s.decodeHex(voucher.Destination))
+		s.Equal(devnet.SenderAddress, voucher.Destination)
 		s.Equal(payloads[i], s.decodeHex(input.Notices.Edges[0].Node.Payload))
 		s.Equal(payloads[i], s.decodeHex(input.Reports.Edges[0].Node.Payload))
 	}
@@ -150,6 +151,8 @@ func (s *NonodoSuite) SetupTest(opts NonodoOpts) {
 	case <-ready:
 		s.T().Log("nonodo ready")
 	}
+
+	s.rpcUrl = fmt.Sprintf("http://127.0.0.1:%v", opts.AnvilPort)
 
 	graphqlEndpoint := fmt.Sprintf("http://%v:%v/graphql", opts.HttpAddress, opts.HttpPort)
 	s.graphqlClient = graphql.NewClient(graphqlEndpoint, nil)

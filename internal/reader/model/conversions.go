@@ -33,7 +33,7 @@ func convertInput(input model.AdvanceInput) *Input {
 	return &Input{
 		Index:       input.Index,
 		Status:      convertCompletionStatus(input.Status),
-		MsgSender:   hexutil.Encode(input.MsgSender[:]),
+		MsgSender:   input.MsgSender.String(),
 		Timestamp:   fmt.Sprint(input.Timestamp.Unix()),
 		BlockNumber: fmt.Sprint(input.BlockNumber),
 		Payload:     hexutil.Encode(input.Payload),
@@ -44,7 +44,7 @@ func convertVoucher(voucher model.Voucher) *Voucher {
 	return &Voucher{
 		InputIndex:  voucher.InputIndex,
 		Index:       voucher.Index,
-		Destination: hexutil.Encode(voucher.Destination[:]),
+		Destination: voucher.Destination.String(),
 		Payload:     hexutil.Encode(voucher.Payload),
 		Proof:       nil, // nonodo doesn't compute proofs
 	}
