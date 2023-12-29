@@ -5,17 +5,22 @@ package devnet
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"math/big"
+	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gligneul/nonodo/internal/contracts"
 )
 
-// Send an input using the devnet sender.
+// AddInput sends an input to Ethereum using the devnet sender.
 // This function should be used in the devnet environment.
 func AddInput(ctx context.Context, rpcUrl string, payload []byte) error {
 	if len(payload) == 0 {
@@ -63,9 +68,9 @@ func AddInput(ctx context.Context, rpcUrl string, payload []byte) error {
 		return fmt.Errorf("add input: %w", err)
 	}
 
-	receipt, err := bind.WaitMined(ctx, client, tx)
+	receipt, err := waitMined(ctx, client, tx)
 	if err != nil {
-		return fmt.Errorf("wait mined: %w", err)
+		return err
 	}
 	if receipt.Status == 0 {
 		return fmt.Errorf("transaction was not accepted")
@@ -73,7 +78,7 @@ func AddInput(ctx context.Context, rpcUrl string, payload []byte) error {
 	return nil
 }
 
-// Get all input added events from the input box.
+// GetInputAdded gets all input added events from the input box.
 func GetInputAdded(ctx context.Context, rpcUrl string) ([]*contracts.InputBoxInputAdded, error) {
 	client, err := ethclient.DialContext(ctx, rpcUrl)
 	if err != nil {
@@ -85,7 +90,7 @@ func GetInputAdded(ctx context.Context, rpcUrl string) ([]*contracts.InputBoxInp
 	}
 	it, err := inputBox.FilterInputAdded(nil, nil, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to filter input added: %v", err)
+		return nil, fmt.Errorf("filter input added: %v", err)
 	}
 	defer it.Close()
 	var inputs []*contracts.InputBoxInputAdded
@@ -93,4 +98,31 @@ func GetInputAdded(ctx context.Context, rpcUrl string) ([]*contracts.InputBoxInp
 		inputs = append(inputs, it.Event)
 	}
 	return inputs, nil
+}
+
+// WaitMined waits for tx to be mined on the blockchain.
+// It stops waiting when the context is canceled.
+func waitMined(
+	ctx context.Context,
+	client *ethclient.Client,
+	tx *types.Transaction,
+) (*types.Receipt, error) {
+	queryTicker := time.NewTicker(33 * time.Millisecond)
+	defer queryTicker.Stop()
+	for {
+		receipt, err := client.TransactionReceipt(ctx, tx.Hash())
+		if err == nil {
+			return receipt, nil
+		}
+		if errors.Is(err, ethereum.NotFound) {
+			slog.Debug("Transaction not yet mined")
+		} else {
+			return nil, fmt.Errorf("receipt retrieval failed: %w", err)
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-queryTicker.C:
+		}
+	}
 }
