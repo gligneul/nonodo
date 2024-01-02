@@ -26,15 +26,13 @@ jobs:
           version: latest
 
     - name: Check generate
-      run: |
-        go generate ./...
-        git diff --quiet
+      run: make check-gen
 
     - name: Build
-      run: go build -v ./...
+      run: make build
 
     - name: Test
-      run: go test -v -p 1 ./...
+      run: make test
 
   release:
     name: Release
