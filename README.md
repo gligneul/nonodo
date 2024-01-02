@@ -151,5 +151,7 @@ NoNodo is compatible with the following version of the Cartesi Rollups.
 
 - The application will eventually need to be compiled to RISC-V or use a RISC-V runtime in case of interpreted languages;
 - With NoNodo, the application will not be running inside the sandbox of the Cartesi machine and will not block operations that won't be allowed when running inside a Cartesi machine, like accessing remote resources;
+- Inspects, rejects, and exceptions revert the whole machine when running the application in the Cartesi machine; NoNodo cannot simulate this behavior in the host;
 - NoNodo only works for applications that use the Cartesi Rollups HTTP API and doesn't work with applications using the low-level API;
-- Performance inside a Cartesi machine will be much lower than running on the host.
+- Performance inside a Cartesi machine will be much lower than running on the host;
+- Inputs take much longer to arrive when running in testnet and mainnet than the local NoNodo devnet.
