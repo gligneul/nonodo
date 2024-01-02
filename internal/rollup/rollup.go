@@ -8,6 +8,7 @@ package rollup
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -189,8 +190,8 @@ func (r *rollupAPI) RegisterException(c echo.Context) error {
 
 // Check whether the content type is application/json.
 func checkContentType(c echo.Context) bool {
-	contentType := c.Request().Header["Content-Type"]
-	return len(contentType) == 1 && contentType[0] == "application/json"
+	ctype := c.Request().Header.Get(echo.HeaderContentType)
+	return strings.HasPrefix(ctype, echo.MIMEApplicationJSON)
 }
 
 // Convert model input to API type.
