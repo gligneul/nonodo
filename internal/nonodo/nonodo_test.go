@@ -18,7 +18,6 @@ import (
 	"github.com/gligneul/nonodo/internal/devnet"
 	"github.com/gligneul/nonodo/internal/inspect"
 	"github.com/gligneul/nonodo/internal/readerclient"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -114,15 +113,6 @@ func (s *NonodoSuite) TestItWorksWithExternalApplication() {
 	s.Require().Equal(payload, s.decodeHex(response.JSON200.Reports[0].Payload))
 }
 
-func TestItFailsToStartWhenThereIsApplicationConflict(t *testing.T) {
-	// This test doesn't use the suite because the worker fails imediatelly.
-	opts := NewNonodoOpts()
-	opts.EnableEcho = true
-	opts.ApplicationArgs = []string{"test"}
-	_, err := NewNonodoWorker(opts)
-	assert.ErrorIs(t, ApplicationConflictErr, err)
-}
-
 //
 // Setup and tear down
 //
@@ -136,8 +126,7 @@ func (s *NonodoSuite) SetupTest(opts NonodoOpts) {
 	var workerCtx context.Context
 	workerCtx, s.workerCancel = context.WithCancel(s.ctx)
 
-	w, err := NewNonodoWorker(opts)
-	s.Nil(err)
+	w := NewSupervisor(opts)
 
 	ready := make(chan struct{})
 	go func() {
@@ -158,6 +147,7 @@ func (s *NonodoSuite) SetupTest(opts NonodoOpts) {
 	s.graphqlClient = graphql.NewClient(graphqlEndpoint, nil)
 
 	inspectEndpoint := fmt.Sprintf("http://%v:%v/", opts.HttpAddress, opts.HttpPort)
+	var err error
 	s.inspectClient, err = inspect.NewClientWithResponses(inspectEndpoint)
 	s.Nil(err)
 }

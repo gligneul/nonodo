@@ -6,7 +6,6 @@
 package nonodo
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -21,8 +20,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
-
-var ApplicationConflictErr = errors.New("can't use built-in echo with custom application")
 
 // Options to nonodo.
 type NonodoOpts struct {
@@ -62,13 +59,9 @@ func NewNonodoOpts() NonodoOpts {
 	}
 }
 
-// Start nonodo.
-func NewNonodoWorker(opts NonodoOpts) (w supervisor.SupervisorWorker, err error) {
-	if opts.EnableEcho && len(opts.ApplicationArgs) > 0 {
-		return w, ApplicationConflictErr
-	}
-
-	w.Name = "nonodo"
+// Create the nonodo supervisor.
+func NewSupervisor(opts NonodoOpts) supervisor.SupervisorWorker {
+	var w supervisor.SupervisorWorker
 
 	model := model.NewNonodoModel()
 	e := echo.New()
@@ -108,5 +101,5 @@ func NewNonodoWorker(opts NonodoOpts) (w supervisor.SupervisorWorker, err error)
 		})
 	}
 
-	return w, nil
+	return w
 }

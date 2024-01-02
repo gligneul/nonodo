@@ -80,14 +80,17 @@ func run(cmd *cobra.Command, args []string) {
 	slog.SetDefault(logger)
 
 	// check args
+	checkEthAddress(cmd, "address-input-box")
+	checkEthAddress(cmd, "address-application")
 	if opts.AnvilPort == 0 {
 		exitf("--anvil-port cannot be 0")
 	}
 	if cmd.Flags().Changed("rpc-url") && !cmd.Flags().Changed("contracts-input-box-block") {
 		exitf("must set --contracts-input-box-block when setting --rpc-url")
 	}
-	checkEthAddress(cmd, "address-input-box")
-	checkEthAddress(cmd, "address-application")
+	if opts.EnableEcho && len(args) > 0 {
+		exitf("can't use built-in echo with custom application")
+	}
 	opts.ApplicationArgs = args
 
 	// handle signals with notify context
@@ -103,9 +106,7 @@ func run(cmd *cobra.Command, args []string) {
 		case <-ctx.Done():
 		}
 	}()
-	w, err := nonodo.NewNonodoWorker(opts)
-	cobra.CheckErr(err)
-	err = w.Start(ctx, ready)
+	err := nonodo.NewSupervisor(opts).Start(ctx, ready)
 	cobra.CheckErr(err)
 }
 
