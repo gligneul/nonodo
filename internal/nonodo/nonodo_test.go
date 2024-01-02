@@ -63,7 +63,6 @@ func (s *NonodoSuite) TestItProcessesAdvanceInputs() {
 		input := response.Inputs.Edges[i].Node
 		s.Equal(i, input.Index)
 		s.Equal(payloads[i], s.decodeHex(input.Payload))
-		s.Equal(payloads[i], s.decodeHex(input.Payload))
 		s.Equal(devnet.SenderAddress, input.MsgSender)
 		voucher := input.Vouchers.Edges[0].Node
 		s.Equal(payloads[i], s.decodeHex(voucher.Payload))
