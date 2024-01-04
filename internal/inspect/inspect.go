@@ -41,12 +41,13 @@ func (a *inspectAPI) InspectPost(c echo.Context) error {
 }
 
 // Handle GET requests to /{payload}.
-func (a *inspectAPI) Inspect(c echo.Context, payload string) error {
-	decodedPayload, err := url.QueryUnescape(payload)
+func (a *inspectAPI) Inspect(c echo.Context, _ string) error {
+	uri := c.Request().RequestURI[9:] // remove '/inspect/'
+	payload, err := url.QueryUnescape(uri)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	return a.inspect(c, []byte(decodedPayload))
+	return a.inspect(c, []byte(payload))
 }
 
 // Send the inspect input to the model and wait until it is completed.
