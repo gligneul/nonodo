@@ -25,6 +25,8 @@ var devnetState []byte
 
 const stateFileName = "anvil_state.json"
 
+const anvilCommand = "anvil"
+
 // Start the anvil process in the host machine.
 type AnvilWorker struct {
 	Port    int
@@ -32,7 +34,7 @@ type AnvilWorker struct {
 }
 
 func (w AnvilWorker) String() string {
-	return "anvil"
+	return anvilCommand
 }
 
 func (w AnvilWorker) Start(ctx context.Context, ready chan<- struct{}) error {
@@ -44,8 +46,8 @@ func (w AnvilWorker) Start(ctx context.Context, ready chan<- struct{}) error {
 	slog.Debug("anvil: created temp dir with state file", "dir", dir)
 
 	var server supervisor.ServerWorker
-	server.Name = "anvil"
-	server.Command = "anvil"
+	server.Name = anvilCommand
+	server.Command = anvilCommand
 	server.Port = w.Port
 	server.Args = append(server.Args, "--port", fmt.Sprint(w.Port))
 	server.Args = append(server.Args, "--load-state", path.Join(dir, stateFileName))

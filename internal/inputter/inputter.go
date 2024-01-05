@@ -49,7 +49,7 @@ func (w InputterWorker) Start(ctx context.Context, ready chan<- struct{}) error 
 	ready <- struct{}{}
 
 	// First, read the event logs to get the past inputs; then, watch the event logs to get the
-	// new ones. There is a race condition where we might lose inputs sent betwen the
+	// new ones. There is a race condition where we might lose inputs sent between the
 	// readPastInputs call and the watchNewInputs call. Given that nonodo is a development node,
 	// we accept this race condition.
 	err = w.readPastInputs(ctx, client, inputBox)

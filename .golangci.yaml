@@ -1,0 +1,19 @@
+linters:
+  enable:
+    - errcheck
+    - exhaustive
+    - goconst
+    - godox
+    - gofmt
+    - gomnd
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - staticcheck
+    - unused
+linters-settings:
+  lll:
+    line-length: 100
+    tab-width: 8

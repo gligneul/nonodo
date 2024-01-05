@@ -107,7 +107,8 @@ func waitMined(
 	client *ethclient.Client,
 	tx *types.Transaction,
 ) (*types.Receipt, error) {
-	queryTicker := time.NewTicker(33 * time.Millisecond)
+	const pollFrequency = 33 * time.Millisecond
+	queryTicker := time.NewTicker(pollFrequency)
 	defer queryTicker.Stop()
 	for {
 		receipt, err := client.TransactionReceipt(ctx, tx.Hash())

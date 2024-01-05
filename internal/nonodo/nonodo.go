@@ -22,6 +22,9 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+const DefaultHttpPort = 8080
+const HttpTimeout = 10 * time.Second
+
 // Options to nonodo.
 type NonodoOpts struct {
 	AnvilPort    int
@@ -50,7 +53,7 @@ func NewNonodoOpts() NonodoOpts {
 		AnvilPort:          devnet.AnvilDefaultPort,
 		AnvilVerbose:       false,
 		HttpAddress:        "127.0.0.1",
-		HttpPort:           8080,
+		HttpPort:           DefaultHttpPort,
 		InputBoxAddress:    devnet.InputBoxAddress,
 		InputBoxBlock:      0,
 		ApplicationAddress: devnet.ApplicationAddress,
@@ -70,7 +73,7 @@ func NewSupervisor(opts NonodoOpts) supervisor.SupervisorWorker {
 	e.Use(middleware.Recover())
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
 		ErrorMessage: "Request timed out",
-		Timeout:      10 * time.Second,
+		Timeout:      HttpTimeout,
 	}))
 	rollup.Register(e, model)
 	inspect.Register(e, model)

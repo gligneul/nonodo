@@ -11,7 +11,8 @@ type Input struct {
 	Status CompletionStatus `json:"status"`
 	// Address responsible for submitting the input
 	MsgSender string `json:"msgSender"`
-	// Timestamp associated with the input submission, as defined by the base layer's block in which it was recorded
+	// Timestamp associated with the input submission, as defined by the base layer's block in
+	// which it was recorded
 	Timestamp string `json:"timestamp"`
 	// Number of the base layer block in which the input was recorded
 	BlockNumber string `json:"blockNumber"`
@@ -19,17 +20,20 @@ type Input struct {
 	Payload string `json:"payload"`
 }
 
-// Representation of a transaction that can be carried out on the base layer blockchain, such as a transfer of assets
+// Representation of a transaction that can be carried out on the base layer blockchain, such as a
+// transfer of assets
 type Voucher struct {
 	// Voucher index within the context of the input that produced it
 	Index int `json:"index"`
 	// Index of the input
 	InputIndex int
-	// Transaction destination address in Ethereum hex binary format (20 bytes), starting with '0x'
+	// Transaction destination address in Ethereum hex binary format (20 bytes), starting with
+	// '0x'
 	Destination string `json:"destination"`
 	// Transaction payload in Ethereum hex binary format, starting with '0x'
 	Payload string `json:"payload"`
-	// Proof object that allows this voucher to be validated and executed on the base layer blockchain
+	// Proof object that allows this voucher to be validated and executed on the base layer
+	// blockchain
 	Proof *Proof `json:"proof,omitempty"`
 }
 

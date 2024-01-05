@@ -65,7 +65,8 @@ func (a *inspectAPI) inspect(c echo.Context, payload []byte) error {
 	index := a.model.AddInspectInput(payload)
 
 	// Poll the model for response
-	ticker := time.NewTicker(50 * time.Millisecond)
+	const pollFrequency = 33 * time.Millisecond
+	ticker := time.NewTicker(pollFrequency)
 	defer ticker.Stop()
 	for {
 		input := a.model.GetInspectInput(index)
