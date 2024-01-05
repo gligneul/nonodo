@@ -17,18 +17,24 @@ import (
 
 //go:generate go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen -config=oapi.yaml ../../api/inspect.yaml
 
-const InspectRetries = 50
-const InspectPollInterval = time.Millisecond * 100
+// 2^20 bytes, which is the length of the RX buffer in the Cartesi machine.
+const PayloadSizeLimit = 1_048_576
+
+// Model is the inspect interface for the nonodo model.
+type Model interface {
+	AddInspectInput(payload []byte) int
+	GetInspectInput(index int) model.InspectInput
+}
 
 // Register the rollup API to echo
-func Register(e *echo.Echo, model *model.NonodoModel) {
+func Register(e *echo.Echo, model Model) {
 	inspectAPI := &inspectAPI{model}
 	RegisterHandlers(e, inspectAPI)
 }
 
 // Shared struct for request handlers.
 type inspectAPI struct {
-	model *model.NonodoModel
+	model Model
 }
 
 // Handle POST requests to /.
@@ -36,6 +42,9 @@ func (a *inspectAPI) InspectPost(c echo.Context) error {
 	payload, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if len(payload) > PayloadSizeLimit {
+		return c.String(http.StatusBadRequest, "Payload reached size limit")
 	}
 	return a.inspect(c, payload)
 }
@@ -52,21 +61,24 @@ func (a *inspectAPI) Inspect(c echo.Context, _ string) error {
 
 // Send the inspect input to the model and wait until it is completed.
 func (a *inspectAPI) inspect(c echo.Context, payload []byte) error {
+	// Send inspect to the model
 	index := a.model.AddInspectInput(payload)
-	for i := 0; i < InspectRetries; i++ {
+
+	// Poll the model for response
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+	for {
 		input := a.model.GetInspectInput(index)
 		if input.Status != model.CompletionStatusUnprocessed {
 			resp := convertInput(input)
 			return c.JSON(http.StatusOK, &resp)
 		}
-		ctx := c.Request().Context()
 		select {
-		case <-ctx.Done():
-			return c.String(http.StatusInternalServerError, ctx.Err().Error())
-		case <-time.After(InspectPollInterval):
+		case <-c.Request().Context().Done():
+			return c.Request().Context().Err()
+		case <-ticker.C:
 		}
 	}
-	return c.String(http.StatusRequestTimeout, "inspect timed out")
 }
 
 // Convert model input to API type.

@@ -7,6 +7,7 @@ package nonodo
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gligneul/nonodo/internal/devnet"
@@ -67,6 +68,10 @@ func NewSupervisor(opts NonodoOpts) supervisor.SupervisorWorker {
 	e := echo.New()
 	e.Use(middleware.CORS())
 	e.Use(middleware.Recover())
+	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+		ErrorMessage: "Request timed out",
+		Timeout:      10 * time.Second,
+	}))
 	rollup.Register(e, model)
 	inspect.Register(e, model)
 	reader.Register(e, model)
